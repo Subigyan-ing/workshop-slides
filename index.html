@@ -154,7 +154,7 @@
       font-family: var(--mono);
       font-size: 13px;
       color: var(--accent);
-      flex: 0 0 68px;
+      flex: 0 0 80px;
       letter-spacing: .04em;
     }
 
@@ -176,6 +176,12 @@
       font-size: 14.5px;
       color: var(--ink-2);
       margin: 0;
+    }
+
+    .desc code {
+      font-family: var(--mono);
+      font-size: .92em;
+      color: var(--ink);
     }
 
     .arrow {
@@ -221,7 +227,7 @@
       }
 
       .week {
-        flex-basis: 52px;
+        flex-basis: 64px;
       }
     }
   </style>
@@ -241,8 +247,19 @@
     <!-- Add a new deck: copy one <li> block, change the file, week and title. -->
     <ul class="decks">
       <li>
-        <a class="deck" href="week-7.html">
-          <span class="week">Week 6</span>
+        <a class="deck" href="js-essentials.html">
+          <span class="week">Basics</span>
+          <span class="body">
+            <span class="title">JavaScript Before React</span>
+            <span class="desc">Arrow functions, spread, computed keys and <code>(prev) =&gt;</code> — read this
+              first.</span>
+          </span>
+          <span class="arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="deck" href="week-6-7.html">
+          <span class="week">Week 6&ndash;7</span>
           <span class="body">
             <span class="title">Nine Tasks</span>
             <span class="desc">State, events, lists and forms — you write the React.</span>

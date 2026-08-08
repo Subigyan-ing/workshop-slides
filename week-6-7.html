@@ -1,0 +1,1936 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>React Week 6 — Nine Tasks</title>
+  <style>
+    /* ============================================================
+   React Workshop — Week 6
+   Design: the plan's own arc is break → fix → checkpoint.
+   Two colours carry it. Everything else stays quiet.
+   Break  = hatched rail + the word BREAK IT
+   Repair = dotted rail + the word FIX IT
+   Green  = solid rail + APP WORKS NOW
+   (form + word, never hue alone)
+   ============================================================ */
+
+    :root {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+        "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #EFF2F5;
+        --bg-2: #FBFCFD;
+        --bg-3: #E4E9EE;
+        --ink: #131A21;
+        --ink-2: #56677A;
+        --ink-3: #7B8B9C;
+        --rule: #D0D9E1;
+        --break: #C7362A;
+        --ok: #1B7A50;
+
+        --t-com: #78889B;
+        --t-kw: #1B5FBF;
+        --t-str: #96551A;
+        --t-tag: #0B6E60;
+        --t-num: #6B3FA0;
+        --t-fn: #8A6A08;
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg: #EFF2F5;
+      --bg-2: #FBFCFD;
+      --bg-3: #E4E9EE;
+      --ink: #131A21;
+      --ink-2: #56677A;
+      --ink-3: #7B8B9C;
+      --rule: #D0D9E1;
+      --break: #C7362A;
+      --ok: #1B7A50;
+      --t-com: #78889B;
+      --t-kw: #1B5FBF;
+      --t-str: #96551A;
+      --t-tag: #0B6E60;
+      --t-num: #6B3FA0;
+      --t-fn: #8A6A08;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- stage ---------- */
+    #viewport {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #stage {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      transform-origin: center center;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      grid-template-rows: auto 1fr auto;
+      padding: 0;
+    }
+
+    .slide.on {
+      display: grid;
+    }
+
+    /* ---------- chrome ---------- */
+    .top {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 22px 56px 0 56px;
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .top .step {
+      color: var(--ink-2);
+    }
+
+    .top .sep {
+      color: var(--rule);
+    }
+
+    .top .time {
+      margin-left: auto;
+      letter-spacing: .06em;
+    }
+
+    .body {
+      padding: 24px 56px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .foot {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 56px 22px 56px;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      min-height: 20px;
+    }
+
+    /* status bar — form-encoded, not hue-encoded */
+    .status {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .status .rail {
+      width: 8px;
+      border-radius: 1px;
+    }
+
+    .status .txt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status .tag {
+      font-weight: 700;
+    }
+
+    .status .val {
+      color: var(--ink-2);
+      text-transform: none;
+      letter-spacing: .02em;
+      font-size: 14px;
+    }
+
+    .status.ok .rail {
+      background: var(--ok);
+    }
+
+    .status.ok .tag {
+      color: var(--ok);
+    }
+
+    .status.brk .rail {
+      background: repeating-linear-gradient(45deg, var(--break) 0 4px, transparent 4px 8px);
+    }
+
+    .status.brk .tag {
+      color: var(--break);
+    }
+
+    .status.fix .rail {
+      background: repeating-linear-gradient(to bottom, var(--ok) 0 3px, transparent 3px 7px);
+    }
+
+    .status.fix .tag {
+      color: var(--ok);
+    }
+
+    /* ---------- type ---------- */
+    h1.big {
+      font-family: var(--mono);
+      font-size: 68px;
+      line-height: 1.04;
+      letter-spacing: -.03em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 42px;
+      line-height: 1.12;
+      letter-spacing: -.025em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      margin: 0;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    p.lede {
+      font-size: 25px;
+      line-height: 1.45;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 62ch;
+    }
+
+    p.note {
+      font-size: 20px;
+      line-height: 1.5;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 68ch;
+    }
+
+    ul.pts {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    ul.pts>li {
+      font-size: 24px;
+      line-height: 1.4;
+      color: var(--ink);
+      padding-left: 26px;
+      position: relative;
+      max-width: 66ch;
+    }
+
+    ul.pts>li::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: .62em;
+      width: 7px;
+      height: 2px;
+      background: var(--ink-3);
+    }
+
+    ul.pts>li .sub {
+      display: block;
+      font-size: 19px;
+      color: var(--ink-2);
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+
+    ul.tight>li {
+      font-size: 21px;
+    }
+
+    code.i {
+      font-family: var(--mono);
+      font-size: .93em;
+      background: var(--bg-3);
+      color: var(--ink);
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    em {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+
+    /* ---------- code blocks ---------- */
+    pre {
+      margin: 0;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--rule);
+      border-radius: 4px;
+      padding: 20px 24px;
+      overflow-x: auto;
+    }
+
+    pre code {
+      font-family: var(--mono);
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--ink);
+      white-space: pre;
+      display: block;
+    }
+
+    pre.sm code {
+      font-size: 18.5px;
+      line-height: 1.5;
+    }
+
+    pre.xs code {
+      font-size: 16.5px;
+      line-height: 1.45;
+    }
+
+    pre.brk {
+      border-left-color: var(--break);
+    }
+
+    pre.good {
+      border-left-color: var(--ok);
+    }
+
+    .t-com {
+      color: var(--t-com);
+      font-style: italic;
+    }
+
+    .t-kw {
+      color: var(--t-kw);
+    }
+
+    .t-str {
+      color: var(--t-str);
+    }
+
+    .t-tag {
+      color: var(--t-tag);
+    }
+
+    .t-num {
+      color: var(--t-num);
+    }
+
+    .t-fn {
+      color: var(--t-fn);
+    }
+
+    .pre-label {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 8px;
+    }
+
+    .pre-label.bad {
+      color: var(--break);
+    }
+
+    .pre-label.good {
+      color: var(--ok);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .cols.wide {
+      gap: 30px;
+    }
+
+    /* ---------- section cards ---------- */
+    .section-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .section-card h1 {
+      font-size: 62px;
+    }
+
+    .star {
+      color: var(--ok);
+    }
+
+    /* ---------- callouts ---------- */
+    .callout {
+      display: grid;
+      grid-template-columns: 8px 1fr;
+      gap: 22px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 26px 28px 26px 0;
+      align-items: stretch;
+    }
+
+    .callout .bar {
+      background: repeating-linear-gradient(45deg, var(--break) 0 5px, transparent 5px 10px);
+      border-radius: 2px;
+    }
+
+    .callout .inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .callout .kicker {
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--break);
+      font-weight: 700;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.45;
+      color: var(--ink);
+      max-width: 64ch;
+    }
+
+    .callout.info .bar {
+      background: var(--ink-3);
+    }
+
+    .callout.info .kicker {
+      color: var(--ink-2);
+    }
+
+    /* ---------- the loop diagram ---------- */
+    .loop {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .loop .node {
+      font-family: var(--mono);
+      font-size: 19px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 12px 16px;
+      color: var(--ink);
+    }
+
+    .loop .arrow {
+      color: var(--ink-3);
+      font-family: var(--mono);
+      font-size: 19px;
+    }
+
+    .loop .node.hi {
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    /* ---------- table ---------- */
+    .tbl-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 500px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 17.5px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding: 0 14px 10px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    tbody td {
+      padding: 11px 14px 11px 0;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+      line-height: 1.35;
+    }
+
+    tbody td:first-child {
+      color: var(--ink);
+      width: 47%;
+    }
+
+    tbody td:last-child {
+      color: var(--ink-2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ---------- title slide ---------- */
+    .title-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      gap: 26px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 16px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .title-meta {
+      display: flex;
+      gap: 34px;
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--ink-2);
+      letter-spacing: .04em;
+      flex-wrap: wrap;
+    }
+
+    .title-meta span {
+      display: flex;
+      gap: 9px;
+      align-items: baseline;
+    }
+
+    .title-meta b {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 34px;
+    }
+
+    .roadmap .rm {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 14px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 18.5px;
+    }
+
+    .roadmap .rm .n {
+      font-family: var(--mono);
+      color: var(--ink-3);
+      font-size: 15px;
+    }
+
+    .roadmap .rm .t {
+      color: var(--ink);
+    }
+
+    .roadmap .rm .d {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink-3);
+    }
+
+    .roadmap .hd {
+      grid-column: 1 / -1;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-top: 6px;
+    }
+
+    /* ---------- app chrome outside stage ---------- */
+    #bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: var(--rule);
+      z-index: 40;
+    }
+
+    #bar>i {
+      display: block;
+      height: 100%;
+      background: var(--ink-2);
+      width: 0;
+      transition: width .18s ease;
+    }
+
+    #hud {
+      position: fixed;
+      right: 16px;
+      bottom: 14px;
+      z-index: 41;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink-3);
+    }
+
+    #hud button {
+      font: inherit;
+      color: var(--ink-2);
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 5px 10px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    #hud button:hover {
+      color: var(--ink);
+      border-color: var(--ink-3);
+    }
+
+    #hud button:focus-visible,
+    #jump:focus-visible,
+    .jrow:focus-visible {
+      outline: 2px solid var(--ok);
+      outline-offset: 2px;
+    }
+
+    #counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- notes ---------- */
+    #notes {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      z-index: 39;
+      background: var(--bg-2);
+      border-top: 1px solid var(--rule);
+      padding: 16px 22px 18px;
+      max-height: 34vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #notes.on {
+      display: block;
+    }
+
+    #notes .nh {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 9px;
+    }
+
+    #notes .nb {
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      max-width: 100ch;
+    }
+
+    #notes .nb p {
+      margin: 0 0 8px;
+    }
+
+    #notes .nb p:last-child {
+      margin-bottom: 0;
+    }
+
+    #notes .nb em {
+      color: var(--ink-2);
+    }
+
+    #notes .nb code {
+      font-family: var(--mono);
+      font-size: .92em;
+      background: var(--bg-3);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .nt {
+      display: none;
+    }
+
+    /* ---------- jump menu ---------- */
+    #jump {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: var(--bg);
+      display: none;
+      padding: 30px 40px;
+      overflow-y: auto;
+    }
+
+    #jump.on {
+      display: block;
+    }
+
+    #jump h4 {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 22px 0 8px;
+    }
+
+    #jump h4:first-child {
+      margin-top: 0;
+    }
+
+    .jgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 4px 26px;
+    }
+
+    .jrow {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: baseline;
+      padding: 6px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      text-align: left;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      width: 100%;
+    }
+
+    .jrow:hover {
+      background: var(--bg-2);
+    }
+
+    .jrow .jn {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .jrow.cur {
+      background: var(--bg-3);
+    }
+
+    .jrow.cur .jn {
+      color: var(--ok);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="viewport">
+    <div id="stage">
+
+      <!-- ══════════════════════════ START ══════════════════════════ -->
+
+      <section class="slide" data-sec="Start">
+        <div class="top"></div>
+        <div class="body">
+          <div class="title-wrap">
+            <div class="eyebrow">React Workshop · Level 4 · Week 6</div>
+            <h1 class="big">Nine tasks.<br />You write<br />the React.</h1>
+            <p class="lede">The design is finished. Every button is already on the page — none of them do anything yet.
+              That part is yours.</p>
+            <div class="title-meta">
+              <span>9 tasks</span>
+              <span>task → hint → solution</span>
+              <span><b>The app runs after every task.</b></span>
+            </div>
+          </div>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Start" data-step="How this works">
+        <div class="top"><span class="step">Start</span><span class="sep">/</span><span>How this works</span></div>
+        <div class="body">
+          <h2>Three slides per task</h2>
+          <ul class="pts">
+            <li><strong>Task</strong> — what to build, and which file to open.<span class="sub">Try it before you move
+                on. Being stuck for a few minutes is where the learning happens.</span></li>
+            <li><strong>Hint</strong> — the same idea, written smaller.<span class="sub">Not the answer. The shape of
+                the answer.</span></li>
+            <li><strong>Solution</strong> — the real code, to compare against yours.<span class="sub">If yours works but
+                looks different, yours is fine.</span></li>
+          </ul>
+          <div class="callout info">
+            <span class="bar"></span>
+            <div class="inner">
+              <div class="kicker">First</div>
+              <p><code class="i">npm install</code>, then <code class="i">npm run dev</code>. You should never need to
+                touch <code class="i">App.css</code> — every class you need is already written. When a solution shows
+                an element that is already on the page, <strong>edit that one</strong> — don't paste a second copy.</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Starting
+                point</span><span class="val">Three cards, a search box and a form — all inert</span></span></div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 1 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 1">
+        <div class="top"><span class="step">Task 1</span><span class="sep">/</span><span>Event handling</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/components/ProfessionalCard.jsx</h3>
+          <h2>Make the Contact button print the professional's name.</h2>
+          <ul class="pts">
+            <li>Clicking <strong>Contact</strong> on John Doe's card should log <code class="i">Contacting John
+                Doe</code> in the browser console.</li>
+            <li>Each card must log <em>its own</em> name — the card already receives that professional as a prop.</li>
+          </ul>
+          <p class="note">Open the console first: right-click the page → Inspect → Console.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 1" data-step="Hint">
+        <div class="top"><span class="step">Task 1</span><span class="sep">/</span><span>Event handling</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>Hand React the function. Do not call it.</h2>
+          <pre class="sm good"><code>function handleClick() {
+  console.log("clicked");
+}
+
+&lt;button type="button" onClick={handleClick}&gt;Click me&lt;/button&gt;</code></pre>
+          <div class="cols">
+            <div>
+              <div class="pre-label good">Correct</div>
+              <pre class="xs good"><code>onClick={handleClick}</code></pre>
+            </div>
+            <div>
+              <div class="pre-label bad">Runs immediately, then never again</div>
+              <pre class="xs brk"><code>onClick={handleClick()}</code></pre>
+            </div>
+          </div>
+          <p class="note">The second one <strong>calls</strong> the function while React is building the page, and hands
+            React whatever it returned. Note the capital C: <code class="i">onClick</code>, not <code
+              class="i">onclick</code>.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 1" data-step="Solution">
+        <div class="top"><span class="step">Task 1</span><span class="sep">/</span><span>Event handling</span><span
+            class="time">Solution</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalCard.jsx</div>
+          <pre class="sm good"><code>function ProfessionalCard({ professional }) {
+  function handleContact() {
+    console.log(`Contacting ${professional.name}`);
+  }
+
+  return (
+    ...
+    &lt;button type="button" className="btn" onClick={handleContact}&gt;
+      Contact
+    &lt;/button&gt;
+    ...
+  );
+}</code></pre>
+          <p class="note"><code class="i">handleContact</code> lives <em>inside</em> the component, so
+            <code class="i">professional</code> is already in scope — you don't pass it in.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Three cards, three different names in the console</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Two mistakes to check for: calling instead of passing (<code>onClick={handleContact()}</code>), and trying
+            to pass <code>professional</code> into the handler when it is already in scope.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 2 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 2">
+        <div class="top"><span class="step">Task 2</span><span class="sep">/</span><span>useState</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/components/ProfessionalCard.jsx · temporary</h3>
+          <h2>Add a click counter to the card. Then delete it.</h2>
+          <ul class="pts">
+            <li><strong>First, do it wrong on purpose.</strong> Write <code class="i">let count = 0;</code> inside the
+              component and a button that does <code class="i">count = count + 1;</code> and logs it.<span class="sub">The
+                console counts up. The page never changes. Understand why before moving on.</span></li>
+            <li><strong>Then fix it with <code class="i">useState</code>.</strong> The number on the button should go up
+              when you click it.</li>
+            <li>Delete the counter when you're done — it was only there to show you the difference.</li>
+          </ul>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Break it
+                first</span><span class="val">A plain variable changes, and nothing re-renders</span></span></div>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Task 2" data-step="Hint">
+        <div class="top"><span class="step">Task 2</span><span class="sep">/</span><span>useState</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>State is a variable React watches.</h2>
+          <pre class="sm good"><code>import { useState } from "react";
+
+const [count, setCount] = useState(0);</code></pre>
+          <ul class="pts tight">
+            <li><code class="i">count</code> — the current value</li>
+            <li><code class="i">setCount</code> — the only way to change it</li>
+            <li><code class="i">useState(0)</code> — the starting value, used on the first render only</li>
+          </ul>
+          <p class="note">Changing a plain variable is invisible to React. Calling the setter tells React
+            <em>"this changed — draw the page again."</em> The names in the brackets are yours to choose; the order is
+            not.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 2" data-step="Solution">
+        <div class="top"><span class="step">Task 2</span><span class="sep">/</span><span>useState</span><span
+            class="time">Solution</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalCard.jsx — temporary</div>
+          <pre class="sm good"><code>import { useState } from "react";
+
+function ProfessionalCard({ professional }) {
+  const [count, setCount] = useState(0);
+
+  return (
+    ...
+    &lt;button type="button" className="btn" onClick={() =&gt; setCount(count + 1)}&gt;
+      Clicked {count} times
+    &lt;/button&gt;
+    ...
+  );
+}</code></pre>
+          <p class="note">Each card keeps its own <code class="i">count</code>. One line of code, three independent
+            counters — because state belongs to the card on screen, not to the function you wrote.</p>
+        </div>
+        <div class="foot">
+          <div class="status fix"><span class="rail"></span><span class="txt"><span class="tag">Now delete
+                it</span><span class="val">The counter has done its job</span></span></div>
+        </div>
+        <div class="nt">
+          <p>The arrow wrapper is needed here for the same reason as Task 1 — <code>setCount(count + 1)</code> is a
+            call, so it has to be wrapped in a function React can call later.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 3 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 3">
+        <div class="top"><span class="step">Task 3</span><span class="sep">/</span><span>Conditional rendering</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/components/ProfessionalCard.jsx</h3>
+          <h2>Make "Show info" actually show and hide the description.</h2>
+          <ul class="pts">
+            <li>The description starts <strong>hidden</strong>.</li>
+            <li>Clicking the button shows it; clicking again hides it.</li>
+            <li>The button label changes: <code class="i">Show info</code> → <code class="i">Hide info</code>.</li>
+            <li>Opening one card must <strong>not</strong> open the other two.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 3" data-step="Hint">
+        <div class="top"><span class="step">Task 3</span><span class="sep">/</span><span>Conditional rendering</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>A ternary picks between two things.</h2>
+          <pre class="sm good"><code>condition ? whenTrue : whenFalse</code></pre>
+          <p class="note">Use it for the label, and use it in the JSX to choose between the element and
+            <code class="i">null</code>. <strong><code class="i">null</code> means "render nothing here."</strong></p>
+          <pre class="sm good"><code>&lt;p&gt;{isOpen ? "Open" : "Closed"}&lt;/p&gt;
+
+{isOpen ? &lt;p&gt;Some details&lt;/p&gt; : null}</code></pre>
+          <p class="note">The description is a <code class="i">&lt;p className="professional-description"&gt;</code> —
+            keep that class, it's what draws the line above the text.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 3" data-step="Solution">
+        <div class="top"><span class="step">Task 3</span><span class="sep">/</span><span>Conditional rendering</span><span
+            class="time">Solution</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalCard.jsx — edit the button that is already there</div>
+          <pre class="xs good"><code>import { useState } from "react";
+
+function ProfessionalCard({ professional }) {
+  const [expanded, setExpanded] = useState(false);
+  ...
+  &lt;button
+    type="button"
+    className="link-button"
+    onClick={() =&gt; setExpanded(!expanded)}
+  &gt;
+    {expanded ? "Hide info" : "Show info"}
+  &lt;/button&gt;
+
+  {expanded ? (
+    &lt;p className="professional-description"&gt;{professional.description}&lt;/p&gt;
+  ) : null}
+  ...
+}</code></pre>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Each card opens and closes on its own</span></span></div>
+        </div>
+        <div class="nt">
+          <p><code>!expanded</code> reads as "not expanded" — it flips true to false and back.</p>
+          <p>When a ternary returns JSX across several lines, wrap it in round brackets as above, or the code will not
+            parse.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 4 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 4">
+        <div class="top"><span class="step">Task 4</span><span class="sep">/</span><span>Lifting state up</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/App.jsx and src/components/ProfessionalCard.jsx</h3>
+          <h2>Make the Delete button remove the card.</h2>
+          <ul class="pts">
+            <li>Put the list of professionals into state — <strong>in <code class="i">App</code></strong>, not in the
+              card.<span class="sub">A card cannot delete itself out of a list it doesn't own. The list has to live in
+                the closest shared parent.</span></li>
+            <li>Pass a delete function down to each card as a prop.</li>
+            <li>Deleting a card must not disturb the others — if another card is showing its info, it stays open.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 4" data-step="Hint">
+        <div class="top"><span class="step">Task 4</span><span class="sep">/</span><span>Lifting state up</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>Never change the array. Build a new one.</h2>
+          <pre class="sm good"><code>const [items, setItems] = useState(SEED_ITEMS);
+
+function handleRemove(id) {
+  setItems((prev) =&gt; prev.filter((item) =&gt; item.id !== id));
+}</code></pre>
+          <ul class="pts tight">
+            <li><code class="i">.filter()</code> returns a <strong>new</strong> array with the matches kept — the
+              original is untouched. <code class="i">.splice()</code> edits in place; React will not notice it.</li>
+            <li><code class="i">(prev) =&gt;</code> means "whatever the list is right now, here is the replacement".</li>
+            <li>Down in the card: <code class="i">onClick={() =&gt; onDelete(professional.id)}</code></li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 4" data-step="Solution">
+        <div class="top"><span class="step">Task 4</span><span class="sep">/</span><span>Lifting state up</span><span
+            class="time">Solution 1/2</span></div>
+        <div class="body">
+          <div class="pre-label good">src/App.jsx</div>
+          <pre class="xs good"><code>import { useState } from "react";
+
+function App() {
+  const [professionals, setProfessionals] = useState(SEED_PROFESSIONALS);
+
+  function handleDelete(id) {
+    setProfessionals((prev) =&gt; prev.filter((p) =&gt; p.id !== id));
+  }
+  ...
+  &lt;div className="professional-cards-container"&gt;
+    {professionals.map((professional) =&gt; (
+      &lt;ProfessionalCard
+        key={professional.id}
+        professional={professional}
+        onDelete={handleDelete}
+      /&gt;
+    ))}
+  &lt;/div&gt;
+  ...
+}</code></pre>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 4" data-step="Solution">
+        <div class="top"><span class="step">Task 4</span><span class="sep">/</span><span>Lifting state up</span><span
+            class="time">Solution 2/2</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalCard.jsx — edit the existing Delete button</div>
+          <pre class="sm good"><code>function ProfessionalCard({ professional, onDelete }) {
+  ...
+  &lt;button
+    type="button"
+    className="btn btn-danger"
+    onClick={() =&gt; onDelete(professional.id)}
+  &gt;
+    Delete
+  &lt;/button&gt;
+}</code></pre>
+          <div class="callout info">
+            <span class="bar"></span>
+            <div class="inner">
+              <div class="kicker">Why key={professional.id}</div>
+              <p>The key is how React tells the cards apart. Open the third card's info, then delete the first. With an
+                id as the key, the right card stays open. With the array position, the wrong one does.</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Cards delete, and the others keep their state</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Worth demonstrating live: expand Jane Smith, delete John Doe, and show that Jane stays expanded. Then swap
+            the key to the map index and do it again — Jane collapses and someone else opens.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 5 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 5">
+        <div class="top"><span class="step">Task 5</span><span class="sep">/</span><span>Derived state</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/App.jsx</h3>
+          <h2>Make the search box filter the cards as you type.</h2>
+          <ul class="pts">
+            <li>Filter by name, ignoring upper and lower case.</li>
+            <li>When nothing matches, show <code class="i">No professionals found</code> instead of the empty grid.<span
+                class="sub">The message needs <code class="i">&lt;p className="state-message"&gt;</code> — that class is
+                already styled for you.</span></li>
+            <li><strong>Do not put the filtered list in state.</strong> Work it out while the page renders.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 5" data-step="Hint">
+        <div class="top"><span class="step">Task 5</span><span class="sep">/</span><span>Derived state</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>Two pieces of state would drift apart.</h2>
+          <p class="note">You have the full list and you have what was typed. The visible list is just those two put
+            together — a plain <code class="i">const</code>, recalculated on every render, so it can never be stale.</p>
+          <pre class="sm good"><code>const [query, setQuery] = useState("");
+
+const visible = professionals.filter((p) =&gt;
+  p.name.toLowerCase().includes(query.toLowerCase()),
+);</code></pre>
+          <ul class="pts tight">
+            <li>A controlled input needs both: <code class="i">value={query}</code> and
+              <code class="i">onChange={(e) =&gt; setQuery(e.target.value)}</code></li>
+            <li>An empty search matches everything — <code class="i">"".includes("")</code> is true.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 5" data-step="Solution">
+        <div class="top"><span class="step">Task 5</span><span class="sep">/</span><span>Derived state</span><span
+            class="time">Solution 1/2</span></div>
+        <div class="body">
+          <div class="pre-label good">src/App.jsx — edit the search input that is already there</div>
+          <pre class="xs good"><code>const [query, setQuery] = useState("");
+
+const visible = professionals.filter((p) =&gt;
+  p.name.toLowerCase().includes(query.toLowerCase()),
+);
+
+&lt;input
+  className="search-input"
+  type="search"
+  value={query}
+  onChange={(e) =&gt; setQuery(e.target.value)}
+  placeholder="Search by name…"
+  aria-label="Search professionals by name"
+/&gt;</code></pre>
+          <p class="note"><code class="i">visible</code> is a plain <code class="i">const</code>, not state. It is
+            worked out again on every render, so it can never disagree with the list.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 5" data-step="Solution">
+        <div class="top"><span class="step">Task 5</span><span class="sep">/</span><span>Derived state</span><span
+            class="time">Solution 2/2</span></div>
+        <div class="body">
+          <div class="pre-label good">src/App.jsx — the list, or the message</div>
+          <pre class="xs good"><code>{visible.length === 0 ? (
+  &lt;p className="state-message"&gt;No professionals found&lt;/p&gt;
+) : (
+  &lt;div className="professional-cards-container"&gt;
+    {visible.map((professional) =&gt; (
+      &lt;ProfessionalCard
+        key={professional.id}
+        professional={professional}
+        onDelete={handleDelete}
+      /&gt;
+    ))}
+  &lt;/div&gt;
+)}</code></pre>
+          <p class="note">One ternary covers both cases — the grid or the message, never both, never neither.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Typing filters live; no matches shows the message</span></span></div>
+        </div>
+        <div class="nt">
+          <p>If someone stored <code>visible</code> in state, ask them what happens when a professional is deleted while
+            a search is active. That is the bug this avoids.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 6 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 6">
+        <div class="top"><span class="step">Task 6</span><span class="sep">/</span><span>Controlled form</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/components/ProfessionalForm.jsx and src/App.jsx</h3>
+          <h2>Make the form add a new professional.</h2>
+          <ul class="pts">
+            <li>All four fields controlled by React, held in <strong>one object</strong> of state.</li>
+            <li><strong>One</strong> change handler for all four — not four handlers.</li>
+            <li>Submitting adds a card to the list and clears the form.</li>
+            <li>The page must not reload when you submit.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 6" data-step="Hint">
+        <div class="top"><span class="step">Task 6</span><span class="sep">/</span><span>Controlled form</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>The input's <code class="i">name</code> becomes the key.</h2>
+          <pre class="sm good"><code>function handleChange(e) {
+  setForm((prev) =&gt; ({ ...prev, [e.target.name]: e.target.value }));
+}</code></pre>
+          <ul class="pts tight">
+            <li><code class="i">...prev</code> copies every field you're not touching.</li>
+            <li><code class="i">[e.target.name]</code> in square brackets means "work out this value, then use it as the
+              key". The inputs already have <code class="i">name="name"</code>, <code class="i">name="title"</code> and
+              so on.</li>
+            <li><code class="i">e.preventDefault()</code> on submit, or the browser reloads the page and every piece of
+              state is gone.</li>
+            <li>The form does not own the list. It hands the values up: <code class="i">onSubmit(form)</code>.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 6" data-step="Solution">
+        <div class="top"><span class="step">Task 6</span><span class="sep">/</span><span>Controlled form</span><span
+            class="time">Solution 1/3</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalForm.jsx — the logic</div>
+          <pre class="xs good"><code>import { useState } from "react";
+
+const EMPTY_FORM = { name: "", title: "", email: "", description: "" };
+
+function ProfessionalForm({ onSubmit }) {
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  function handleChange(e) {
+    setForm((prev) =&gt; ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSubmit(form);
+    setForm(EMPTY_FORM);
+  }</code></pre>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 6" data-step="Solution">
+        <div class="top"><span class="step">Task 6</span><span class="sep">/</span><span>Controlled form</span><span
+            class="time">Solution 2/3</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalForm.jsx — edit the inputs already in the file</div>
+          <pre class="xs good"><code>&lt;form className="professional-form" onSubmit={handleSubmit} noValidate&gt;
+  ...
+  &lt;input
+    id="name"
+    name="name"
+    className="form-input"
+    value={form.name}
+    onChange={handleChange}
+  /&gt;
+  ...
+&lt;/form&gt;</code></pre>
+          <p class="note">Every field gets the same two lines — <code class="i">value</code> and
+            <code class="i">onChange</code> — with only <code class="i">form.name</code> changing to
+            <code class="i">form.title</code>, <code class="i">form.email</code>, <code class="i">form.description</code>.
+            The <code class="i">&lt;textarea&gt;</code> works exactly the same way.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 6" data-step="Solution">
+        <div class="top"><span class="step">Task 6</span><span class="sep">/</span><span>Controlled form</span><span
+            class="time">Solution 3/3</span></div>
+        <div class="body">
+          <div class="pre-label good">src/App.jsx</div>
+          <pre class="sm good"><code>function handleSubmit(values) {
+  setProfessionals((prev) =&gt; [
+    ...prev,
+    { ...values, id: crypto.randomUUID() },
+  ]);
+}
+
+&lt;ProfessionalForm onSubmit={handleSubmit} /&gt;</code></pre>
+          <p class="note">Same rule as delete: build a <strong>new</strong> array with a spread, never
+            <code class="i">.push()</code>. Every professional needs an <code class="i">id</code>, so make one —
+            <code class="i">crypto.randomUUID()</code> is built into the browser.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Fill the form, submit, a new card appears</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Every controlled input needs <em>both</em> <code>value</code> and <code>onChange</code>. With only
+            <code>value</code>, the field is frozen and React warns in the console.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 7 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 7">
+        <div class="top"><span class="step">Task 7</span><span class="sep">/</span><span>Validation</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/components/ProfessionalForm.jsx</h3>
+          <h2>Refuse to add a professional when the form is wrong.</h2>
+          <ul class="pts tight">
+            <li><strong>Name</strong> — cannot be empty</li>
+            <li><strong>Title</strong> — at least 3 characters</li>
+            <li><strong>Email</strong> — must look like an email address</li>
+            <li><strong>Description</strong> — at least 20 characters</li>
+          </ul>
+          <p class="note">Show the message under the field it belongs to, using
+            <code class="i">&lt;span className="form-error"&gt;</code>. Check <strong>on submit</strong> — not while
+            they are still typing.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 7" data-step="Hint">
+        <div class="top"><span class="step">Task 7</span><span class="sep">/</span><span>Validation</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>Validation is not a React problem.</h2>
+          <p class="note">It's a function that takes an object and returns an object. No hooks, no JSX — so write it
+            <strong>outside</strong> the component. An empty result means "all good".</p>
+          <pre class="sm good"><code>function validate(form) {
+  const errors = {};
+
+  if (form.name.trim() === "") {
+    errors.name = "Name is required";
+  }
+
+  return errors;
+}</code></pre>
+          <ul class="pts tight">
+            <li>Keep the messages in a second piece of state: <code class="i">const [errors, setErrors] =
+                useState({});</code></li>
+            <li><code class="i">Object.keys(errors).length</code> tells you how many problems there are.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 7" data-step="Solution">
+        <div class="top"><span class="step">Task 7</span><span class="sep">/</span><span>Validation</span><span
+            class="time">Solution 1/2</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalForm.jsx — above the component</div>
+          <pre class="xs good"><code>const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validate(form) {
+  const errors = {};
+  if (form.name.trim() === "") {
+    errors.name = "Name is required";
+  }
+  if (form.title.trim().length &lt; 3) {
+    errors.title = "Title must be at least 3 characters";
+  }
+  if (!EMAIL_PATTERN.test(form.email.trim())) {
+    errors.email = "Enter a valid email address";
+  }
+  if (form.description.trim().length &lt; 20) {
+    errors.description = "Please write at least 20 characters";
+  }
+  return errors;
+}</code></pre>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 7" data-step="Solution">
+        <div class="top"><span class="step">Task 7</span><span class="sep">/</span><span>Validation</span><span
+            class="time">Solution 2/2</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalForm.jsx — inside the component</div>
+          <pre class="xs good"><code>const [errors, setErrors] = useState({});
+
+function handleSubmit(e) {
+  e.preventDefault();
+
+  const nextErrors = validate(form);
+  setErrors(nextErrors);
+
+  if (Object.keys(nextErrors).length &gt; 0) {
+    return;
+  }
+
+  onSubmit(form);
+  setForm(EMPTY_FORM);
+  setErrors({});
+}
+
+&lt;input id="name" name="name" className="form-input"
+  value={form.name} onChange={handleChange} /&gt;
+{errors.name ? &lt;span className="form-error"&gt;{errors.name}&lt;/span&gt; : null}</code></pre>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Submit empty — four messages, no new card</span></span></div>
+        </div>
+        <div class="nt">
+          <p>The order inside <code>handleSubmit</code> matters: validate, store the messages, then stop. Calling
+            <code>onSubmit</code> before the check is the usual bug.</p>
+          <p><code>.trim()</code> is what stops a form full of spaces from passing.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 8 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 8">
+        <div class="top"><span class="step">Task 8</span><span class="sep">/</span><span>Editing</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/App.jsx and src/components/ProfessionalForm.jsx</h3>
+          <h2>Make the Edit button work.</h2>
+          <ul class="pts">
+            <li>Clicking <strong>Edit</strong> fills the form with that professional's details.</li>
+            <li>The heading becomes <code class="i">Edit professional</code> and the button becomes
+              <code class="i">Save Changes</code>.</li>
+            <li>A <strong>Cancel</strong> button appears while editing, and only then.</li>
+            <li>Saving updates the existing card — it does not add a second one.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 8" data-step="Hint">
+        <div class="top"><span class="step">Task 8</span><span class="sep">/</span><span>Editing</span><span
+            class="time">Hint</span></div>
+        <div class="body">
+          <h2>Store the id. Let the key do the rest.</h2>
+          <p class="note"><code class="i">App</code> remembers <em>which</em> professional is being edited — one id, not
+            a copy of their details. Move <code class="i">EMPTY_FORM</code> up to <code class="i">App</code> and pass
+            the starting values down.</p>
+          <pre class="sm good"><code>const [editingId, setEditingId] = useState(null);
+const editing = professionals.find((p) =&gt; p.id === editingId);</code></pre>
+          <div class="callout info">
+            <span class="bar"></span>
+            <div class="inner">
+              <div class="kicker">The trick</div>
+              <p>Change a component's <code class="i">key</code> and React throws the old one away and builds a fresh
+                one — so the form re-reads its starting values by itself. Same idea as Task 4, used on purpose.</p>
+            </div>
+          </div>
+          <p class="note">Updating one item in a list is <code class="i">.map()</code>: return a changed copy for the
+            one you want, and the original for everything else.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 8" data-step="Solution">
+        <div class="top"><span class="step">Task 8</span><span class="sep">/</span><span>Editing</span><span
+            class="time">Solution 1/3</span></div>
+        <div class="body">
+          <div class="pre-label good">src/App.jsx — add or update</div>
+          <pre class="xs good"><code>const EMPTY_FORM = { name: "", title: "", email: "", description: "" };
+
+const [editingId, setEditingId] = useState(null);
+const editing = professionals.find((p) =&gt; p.id === editingId);
+
+function handleSubmit(values) {
+  if (editingId) {
+    setProfessionals((prev) =&gt;
+      prev.map((p) =&gt; (p.id === editingId ? { ...p, ...values } : p)),
+    );
+  } else {
+    setProfessionals((prev) =&gt; [
+      ...prev,
+      { ...values, id: crypto.randomUUID() },
+    ]);
+  }
+  setEditingId(null);
+}</code></pre>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 8" data-step="Solution">
+        <div class="top"><span class="step">Task 8</span><span class="sep">/</span><span>Editing</span><span
+            class="time">Solution 2/3</span></div>
+        <div class="body">
+          <div class="pre-label good">src/App.jsx — wiring, and the card's Edit button</div>
+          <pre class="xs good"><code>function handleEdit(professional) {
+  setEditingId(professional.id);
+}
+
+&lt;ProfessionalForm
+  key={editingId === null ? "new" : editingId}
+  initialValues={editing ? editing : EMPTY_FORM}
+  isEditing={editingId !== null}
+  onSubmit={handleSubmit}
+  onCancel={() =&gt; setEditingId(null)}
+/&gt;
+
+&lt;ProfessionalCard ... onEdit={handleEdit} /&gt;
+
+&lt;button type="button" className="btn" onClick={() =&gt; onEdit(professional)}&gt;
+  Edit
+&lt;/button&gt;</code></pre>
+          <p class="note">Changing <code class="i">key</code> is what refills the form. React sees a different key,
+            throws the old form away, and builds a new one — which reads <code class="i">initialValues</code> as it
+            mounts.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 8" data-step="Solution">
+        <div class="top"><span class="step">Task 8</span><span class="sep">/</span><span>Editing</span><span
+            class="time">Solution 3/3</span></div>
+        <div class="body">
+          <div class="pre-label good">src/components/ProfessionalForm.jsx — EMPTY_FORM moves to App, so delete it here</div>
+          <pre class="xs good"><code>function ProfessionalForm({ initialValues, isEditing, onSubmit, onCancel }) {
+  const [form, setForm] = useState(initialValues);
+  ...
+  setForm(initialValues);
+}
+
+&lt;h2 className="form-title"&gt;
+  {isEditing ? "Edit professional" : "Add a professional"}
+&lt;/h2&gt;
+
+&lt;button type="submit" className="btn btn-primary"&gt;
+  {isEditing ? "Save Changes" : "Add Professional"}
+&lt;/button&gt;
+
+{isEditing ? (
+  &lt;button type="button" className="btn" onClick={onCancel}&gt;
+    Cancel
+  &lt;/button&gt;
+) : null}</code></pre>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Works</span><span
+                class="val">Edit, change, save — the same card updates</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Don't let anyone copy the professional's details into <code>App</code> state and mirror them into the form.
+            One id is enough; the key does the rest.</p>
+          <p>Also note <code>ProfessionalCard</code> now needs the <code>onEdit</code> prop and
+            <code>onClick={() =&gt; onEdit(professional)}</code> on its Edit button.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ TASK 9 ══════════════════════════ -->
+
+      <section class="slide" data-sec="Task 9">
+        <div class="top"><span class="step">Task 9</span><span class="sep">/</span><span>Confirm delete</span><span
+            class="time">Task</span></div>
+        <div class="body">
+          <h3>src/App.jsx</h3>
+          <h2>Ask before deleting.</h2>
+          <ul class="pts">
+            <li>Deleting shows a confirm box naming the professional: <code class="i">Delete John Doe?</code></li>
+            <li>Cancelling leaves the list untouched.</li>
+            <li>If you delete the professional you were editing, the form should go back to "Add a professional".</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Task 9" data-step="Solution">
+        <div class="top"><span class="step">Task 9</span><span class="sep">/</span><span>Confirm delete</span><span
+            class="time">Hint + solution</span></div>
+        <div class="body">
+          <p class="note"><code class="i">window.confirm()</code> stops the page and hands you back
+            <code class="i">true</code> or <code class="i">false</code>. Deal with the "no" case first and leave early —
+            it keeps the rest of the function flat.</p>
+          <div class="pre-label good">src/App.jsx</div>
+          <pre class="sm good"><code>function handleDelete(id) {
+  const professional = professionals.find((p) =&gt; p.id === id);
+
+  if (!window.confirm(`Delete ${professional.name}?`)) {
+    return;
+  }
+
+  setProfessionals((prev) =&gt; prev.filter((p) =&gt; p.id !== id));
+
+  if (editingId === id) {
+    setEditingId(null);
+  }
+}</code></pre>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Done</span><span
+                class="val">Create, read, update, delete — all in React state</span></span></div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ CLOSE ══════════════════════════ -->
+
+      <section class="slide" data-sec="Close">
+        <div class="top"></div>
+        <div class="body">
+          <div class="title-wrap">
+            <div class="eyebrow">Nine tasks · complete</div>
+            <h1 class="big">state → render →<br />event → setState →<br />re-render</h1>
+            <p class="lede">Every task you just did was that same loop. Everything else is detail.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Ask them to rebuild delete from memory before next week — it exercises the whole cycle in about fifteen
+            lines.</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <div id="notes">
+    <div class="nh">Notes — press N to hide</div>
+    <div class="nb" id="notesBody"></div>
+  </div>
+  <div id="bar"><i></i></div>
+  <div id="hud">
+    <button id="btnPrev" type="button" aria-label="Previous slide">←</button>
+    <button id="btnNext" type="button" aria-label="Next slide">→</button>
+    <span id="counter">1 / 1</span>
+    <button id="btnNotes" type="button">N</button>
+    <button id="btnJump" type="button">O</button>
+    <button id="btnTheme" type="button">◐</button>
+    <button id="btnFull" type="button">F</button>
+  </div>
+  <div id="jump" aria-label="Slide index"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* ---------- syntax highlighting ----------
+         Runs over textContent (already-decoded source), escaping as it emits,
+         so entity handling happens exactly once. */
+      function esc(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      var RE = new RegExp([
+        "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)",                                   // 1 comment
+        "(`(?:\\\\[\\s\\S]|[^`\\\\])*`|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|'(?:\\\\[\\s\\S]|[^'\\\\])*')", // 2 string
+        "(<\\/?[A-Za-z][\\w.]*)",                                                   // 3 jsx tag
+        "\\b(const|let|var|function|return|if|else|for|of|in|while|new|async|await|try|catch|finally|throw|import|export|default|from|typeof|null|undefined|true|false)\\b", // 4 keyword
+        "\\b(\\d+(?:\\.\\d+)?)\\b",                                                 // 5 number
+        "\\b([A-Za-z_$][\\w$]*)(?=\\s*\\()"                                         // 6 call
+      ].join("|"), "g");
+
+      var CLS = { 1: "t-com", 2: "t-str", 3: "t-tag", 4: "t-kw", 5: "t-num", 6: "t-fn" };
+
+      function highlight(src) {
+        var out = "", last = 0, m;
+        RE.lastIndex = 0;
+        while ((m = RE.exec(src)) !== null) {
+          if (m[0] === "") { RE.lastIndex++; continue; }
+          out += esc(src.slice(last, m.index));
+          var cls = null;
+          for (var g = 1; g <= 6; g++) { if (m[g] !== undefined) { cls = CLS[g]; break; } }
+          out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+          last = m.index + m[0].length;
+        }
+        return out + esc(src.slice(last));
+      }
+
+      var blocks = document.querySelectorAll("pre code");
+      for (var i = 0; i < blocks.length; i++) {
+        blocks[i].innerHTML = highlight(blocks[i].textContent);
+      }
+
+      /* ---------- deck ---------- */
+      var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+      var stage = document.getElementById("stage");
+      var viewport = document.getElementById("viewport");
+      var notes = document.getElementById("notes");
+      var notesBody = document.getElementById("notesBody");
+      var jump = document.getElementById("jump");
+      var counter = document.getElementById("counter");
+      var barFill = document.querySelector("#bar > i");
+      var cur = 0;
+
+      function fit() {
+        var pad = 24;
+        var chrome = notes.classList.contains("on") ? notes.offsetHeight : 0;
+        var w = window.innerWidth - pad * 2;
+        var h = window.innerHeight - chrome - 46;
+        var s = Math.min(w / 1280, h / 720);
+        stage.style.transform = "scale(" + s + ")";
+        viewport.style.paddingBottom = (chrome + 20) + "px";
+      }
+
+      function show(n) {
+        cur = Math.max(0, Math.min(slides.length - 1, n));
+        for (var i = 0; i < slides.length; i++) {
+          slides[i].classList.toggle("on", i === cur);
+        }
+        counter.textContent = (cur + 1) + " / " + slides.length;
+        barFill.style.width = ((cur + 1) / slides.length * 100) + "%";
+        var nt = slides[cur].querySelector(".nt");
+        notesBody.innerHTML = nt ? nt.innerHTML : "<p><em>No notes for this slide.</em></p>";
+        var rows = jump.querySelectorAll(".jrow");
+        for (var j = 0; j < rows.length; j++) rows[j].classList.toggle("cur", j === cur);
+        try { location.hash = String(cur + 1); } catch (e) { }
+      }
+
+      /* jump menu, grouped by section */
+      (function buildJump() {
+        var html = "", lastSec = null, open = false;
+        slides.forEach(function (s, i) {
+          var sec = s.getAttribute("data-sec") || "—";
+          var h = s.querySelector("h1, h2, h3");
+          var label = s.getAttribute("data-step") || (h ? h.textContent.trim() : "Slide " + (i + 1));
+          if (label.length > 52) label = label.slice(0, 50) + "…";
+          if (sec !== lastSec) {
+            if (open) html += "</div>";
+            html += "<h4>" + esc(sec) + '</h4><div class="jgrid">';
+            lastSec = sec; open = true;
+          }
+          html += '<button type="button" class="jrow" data-i="' + i + '">' +
+            '<span class="jn">' + String(i + 1).padStart(2, "0") + "</span>" +
+            "<span>" + esc(label) + "</span></button>";
+        });
+        if (open) html += "</div>";
+        jump.innerHTML = html;
+        jump.addEventListener("click", function (e) {
+          var btn = e.target.closest(".jrow");
+          if (!btn) return;
+          jump.classList.remove("on");
+          show(parseInt(btn.getAttribute("data-i"), 10));
+        });
+      })();
+
+      function toggleNotes() { notes.classList.toggle("on"); fit(); }
+      function toggleJump() { jump.classList.toggle("on"); }
+      function toggleTheme() {
+        var root = document.documentElement;
+        var now = root.getAttribute("data-theme");
+        if (!now) {
+          now = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        root.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+      }
+      function toggleFull() {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var k = e.key;
+        if (jump.classList.contains("on") && k === "Escape") { jump.classList.remove("on"); return; }
+        if (k === "ArrowRight" || k === "PageDown" || k === " " || k === "j") { e.preventDefault(); show(cur + 1); }
+        else if (k === "ArrowLeft" || k === "PageUp" || k === "k") { e.preventDefault(); show(cur - 1); }
+        else if (k === "Home") { e.preventDefault(); show(0); }
+        else if (k === "End") { e.preventDefault(); show(slides.length - 1); }
+        else if (k === "n" || k === "N") { toggleNotes(); }
+        else if (k === "o" || k === "O") { toggleJump(); }
+        else if (k === "f" || k === "F") { toggleFull(); }
+        else if (k === "t" || k === "T") { toggleTheme(); }
+      });
+
+      document.getElementById("btnPrev").addEventListener("click", function () { show(cur - 1); });
+      document.getElementById("btnNext").addEventListener("click", function () { show(cur + 1); });
+      document.getElementById("btnNotes").addEventListener("click", toggleNotes);
+      document.getElementById("btnJump").addEventListener("click", toggleJump);
+      document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+      document.getElementById("btnFull").addEventListener("click", toggleFull);
+
+      window.addEventListener("resize", fit);
+      document.addEventListener("fullscreenchange", fit);
+
+      var start = parseInt((location.hash || "").replace("#", ""), 10);
+      show(isNaN(start) ? 0 : start - 1);
+      fit();
+    })();
+  </script>
+</body>
+

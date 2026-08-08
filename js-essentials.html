@@ -1,0 +1,1659 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JavaScript Before React — Week 6–7 Primer</title>
+  <style>
+    /* ============================================================
+   React Workshop — JS primer for Week 6–7
+   Same shell and palette as the task deck, on purpose:
+   this is the same course, one step earlier.
+   Hatched rail = the bug this concept causes
+   Solid rail   = what you get once it clicks
+   (form + word, never hue alone)
+   ============================================================ */
+
+    :root {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+        "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #EFF2F5;
+        --bg-2: #FBFCFD;
+        --bg-3: #E4E9EE;
+        --ink: #131A21;
+        --ink-2: #56677A;
+        --ink-3: #7B8B9C;
+        --rule: #D0D9E1;
+        --break: #C7362A;
+        --ok: #1B7A50;
+
+        --t-com: #78889B;
+        --t-kw: #1B5FBF;
+        --t-str: #96551A;
+        --t-tag: #0B6E60;
+        --t-num: #6B3FA0;
+        --t-fn: #8A6A08;
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg: #EFF2F5;
+      --bg-2: #FBFCFD;
+      --bg-3: #E4E9EE;
+      --ink: #131A21;
+      --ink-2: #56677A;
+      --ink-3: #7B8B9C;
+      --rule: #D0D9E1;
+      --break: #C7362A;
+      --ok: #1B7A50;
+      --t-com: #78889B;
+      --t-kw: #1B5FBF;
+      --t-str: #96551A;
+      --t-tag: #0B6E60;
+      --t-num: #6B3FA0;
+      --t-fn: #8A6A08;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- stage ---------- */
+    #viewport {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #stage {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      transform-origin: center center;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      grid-template-rows: auto 1fr auto;
+      padding: 0;
+    }
+
+    .slide.on {
+      display: grid;
+    }
+
+    /* ---------- chrome ---------- */
+    .top {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 22px 56px 0 56px;
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .top .step {
+      color: var(--ink-2);
+    }
+
+    .top .sep {
+      color: var(--rule);
+    }
+
+    .top .time {
+      margin-left: auto;
+      letter-spacing: .06em;
+    }
+
+    .body {
+      padding: 24px 56px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .foot {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 56px 22px 56px;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      min-height: 20px;
+    }
+
+    /* status bar — form-encoded, not hue-encoded */
+    .status {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .status .rail {
+      width: 8px;
+      border-radius: 1px;
+    }
+
+    .status .txt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status .tag {
+      font-weight: 700;
+    }
+
+    .status .val {
+      color: var(--ink-2);
+      text-transform: none;
+      letter-spacing: .02em;
+      font-size: 14px;
+    }
+
+    .status.ok .rail {
+      background: var(--ok);
+    }
+
+    .status.ok .tag {
+      color: var(--ok);
+    }
+
+    .status.brk .rail {
+      background: repeating-linear-gradient(45deg, var(--break) 0 4px, transparent 4px 8px);
+    }
+
+    .status.brk .tag {
+      color: var(--break);
+    }
+
+    .status.fix .rail {
+      background: repeating-linear-gradient(to bottom, var(--ok) 0 3px, transparent 3px 7px);
+    }
+
+    .status.fix .tag {
+      color: var(--ok);
+    }
+
+    /* ---------- type ---------- */
+    h1.big {
+      font-family: var(--mono);
+      font-size: 68px;
+      line-height: 1.04;
+      letter-spacing: -.03em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 42px;
+      line-height: 1.12;
+      letter-spacing: -.025em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      margin: 0;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    p.lede {
+      font-size: 25px;
+      line-height: 1.45;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 62ch;
+    }
+
+    p.note {
+      font-size: 20px;
+      line-height: 1.5;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 68ch;
+    }
+
+    ul.pts {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    ul.pts>li {
+      font-size: 24px;
+      line-height: 1.4;
+      color: var(--ink);
+      padding-left: 26px;
+      position: relative;
+      max-width: 66ch;
+    }
+
+    ul.pts>li::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: .62em;
+      width: 7px;
+      height: 2px;
+      background: var(--ink-3);
+    }
+
+    ul.pts>li .sub {
+      display: block;
+      font-size: 19px;
+      color: var(--ink-2);
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+
+    ul.tight>li {
+      font-size: 21px;
+    }
+
+    code.i {
+      font-family: var(--mono);
+      font-size: .93em;
+      background: var(--bg-3);
+      color: var(--ink);
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    em {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+
+    /* ---------- code blocks ---------- */
+    pre {
+      margin: 0;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--rule);
+      border-radius: 4px;
+      padding: 20px 24px;
+      overflow-x: auto;
+    }
+
+    pre code {
+      font-family: var(--mono);
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--ink);
+      white-space: pre;
+      display: block;
+    }
+
+    pre.sm code {
+      font-size: 18.5px;
+      line-height: 1.5;
+    }
+
+    pre.xs code {
+      font-size: 16.5px;
+      line-height: 1.45;
+    }
+
+    pre.brk {
+      border-left-color: var(--break);
+    }
+
+    pre.good {
+      border-left-color: var(--ok);
+    }
+
+    .t-com {
+      color: var(--t-com);
+      font-style: italic;
+    }
+
+    .t-kw {
+      color: var(--t-kw);
+    }
+
+    .t-str {
+      color: var(--t-str);
+    }
+
+    .t-tag {
+      color: var(--t-tag);
+    }
+
+    .t-num {
+      color: var(--t-num);
+    }
+
+    .t-fn {
+      color: var(--t-fn);
+    }
+
+    .pre-label {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 8px;
+    }
+
+    .pre-label.bad {
+      color: var(--break);
+    }
+
+    .pre-label.good {
+      color: var(--ok);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .cols.wide {
+      gap: 30px;
+    }
+
+    /* ---------- section cards ---------- */
+    .section-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .section-card h1 {
+      font-size: 62px;
+    }
+
+    .star {
+      color: var(--ok);
+    }
+
+    /* ---------- callouts ---------- */
+    .callout {
+      display: grid;
+      grid-template-columns: 8px 1fr;
+      gap: 22px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 26px 28px 26px 0;
+      align-items: stretch;
+    }
+
+    .callout .bar {
+      background: repeating-linear-gradient(45deg, var(--break) 0 5px, transparent 5px 10px);
+      border-radius: 2px;
+    }
+
+    .callout .inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .callout .kicker {
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--break);
+      font-weight: 700;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.45;
+      color: var(--ink);
+      max-width: 64ch;
+    }
+
+    .callout.info .bar {
+      background: var(--ink-3);
+    }
+
+    .callout.info .kicker {
+      color: var(--ink-2);
+    }
+
+    /* ---------- the loop diagram ---------- */
+    .loop {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .loop .node {
+      font-family: var(--mono);
+      font-size: 19px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 12px 16px;
+      color: var(--ink);
+    }
+
+    .loop .arrow {
+      color: var(--ink-3);
+      font-family: var(--mono);
+      font-size: 19px;
+    }
+
+    .loop .node.hi {
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    /* ---------- table ---------- */
+    .tbl-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 500px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 17.5px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding: 0 14px 10px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    tbody td {
+      padding: 11px 14px 11px 0;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+      line-height: 1.35;
+    }
+
+    tbody td:first-child {
+      color: var(--ink);
+      width: 47%;
+    }
+
+    tbody td:last-child {
+      color: var(--ink-2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ---------- title slide ---------- */
+    .title-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      gap: 26px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 16px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .title-meta {
+      display: flex;
+      gap: 34px;
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--ink-2);
+      letter-spacing: .04em;
+      flex-wrap: wrap;
+    }
+
+    .title-meta span {
+      display: flex;
+      gap: 9px;
+      align-items: baseline;
+    }
+
+    .title-meta b {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 34px;
+    }
+
+    .roadmap .rm {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 14px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 18.5px;
+    }
+
+    .roadmap .rm .n {
+      font-family: var(--mono);
+      color: var(--ink-3);
+      font-size: 15px;
+    }
+
+    .roadmap .rm .t {
+      color: var(--ink);
+    }
+
+    .roadmap .rm .d {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink-3);
+    }
+
+    .roadmap .hd {
+      grid-column: 1 / -1;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-top: 6px;
+    }
+
+    /* ---------- app chrome outside stage ---------- */
+    #bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: var(--rule);
+      z-index: 40;
+    }
+
+    #bar>i {
+      display: block;
+      height: 100%;
+      background: var(--ink-2);
+      width: 0;
+      transition: width .18s ease;
+    }
+
+    #hud {
+      position: fixed;
+      right: 16px;
+      bottom: 14px;
+      z-index: 41;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink-3);
+    }
+
+    #hud button {
+      font: inherit;
+      color: var(--ink-2);
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 5px 10px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    #hud button:hover {
+      color: var(--ink);
+      border-color: var(--ink-3);
+    }
+
+    #hud button:focus-visible,
+    #jump:focus-visible,
+    .jrow:focus-visible {
+      outline: 2px solid var(--ok);
+      outline-offset: 2px;
+    }
+
+    #counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- notes ---------- */
+    #notes {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      z-index: 39;
+      background: var(--bg-2);
+      border-top: 1px solid var(--rule);
+      padding: 16px 22px 18px;
+      max-height: 34vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #notes.on {
+      display: block;
+    }
+
+    #notes .nh {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 9px;
+    }
+
+    #notes .nb {
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      max-width: 100ch;
+    }
+
+    #notes .nb p {
+      margin: 0 0 8px;
+    }
+
+    #notes .nb p:last-child {
+      margin-bottom: 0;
+    }
+
+    #notes .nb em {
+      color: var(--ink-2);
+    }
+
+    #notes .nb code {
+      font-family: var(--mono);
+      font-size: .92em;
+      background: var(--bg-3);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .nt {
+      display: none;
+    }
+
+    /* ---------- jump menu ---------- */
+    #jump {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: var(--bg);
+      display: none;
+      padding: 30px 40px;
+      overflow-y: auto;
+    }
+
+    #jump.on {
+      display: block;
+    }
+
+    #jump h4 {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 22px 0 8px;
+    }
+
+    #jump h4:first-child {
+      margin-top: 0;
+    }
+
+    .jgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 4px 26px;
+    }
+
+    .jrow {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: baseline;
+      padding: 6px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      text-align: left;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      width: 100%;
+    }
+
+    .jrow:hover {
+      background: var(--bg-2);
+    }
+
+    .jrow .jn {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .jrow.cur {
+      background: var(--bg-3);
+    }
+
+    .jrow.cur .jn {
+      color: var(--ok);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="viewport">
+    <div id="stage">
+
+
+      <!-- ══════════════════════════ START ══════════════════════════ -->
+
+      <section class="slide" data-sec="Start">
+        <div class="top"></div>
+        <div class="body">
+          <div class="title-wrap">
+            <div class="eyebrow">React Workshop · Before Week 6&ndash;7</div>
+            <h1 class="big">Five bits of<br />JavaScript.<br />Then React.</h1>
+            <p class="lede">Nothing here is React. It is the plain JavaScript and JSX that the Week 6&ndash;7 solutions
+              are written in — the syntax that makes people think they don't understand React when they don't yet
+              understand the line.</p>
+            <div class="title-meta">
+              <span>5 concepts</span>
+              <span>idea → shape → the real line</span>
+              <span><b>Read this first.</b></span>
+            </div>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Worth 20 minutes before the tasks. Every code sample here is lifted from a Week 6&ndash;7 solution, so
+            they will meet all of it again in context.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Start" data-step="The line we are building to">
+        <div class="top"><span class="step">Start</span><span class="sep">/</span><span>Why this deck</span></div>
+        <div class="body">
+          <h2>By the end, this line is boring.</h2>
+          <pre class="sm good"><code>setForm((prev) =&gt; ({ ...prev, [e.target.name]: e.target.value }));</code></pre>
+          <ul class="pts tight">
+            <li><code class="i">(prev) =&gt;</code> — an arrow function.</li>
+            <li><code class="i">=&gt; ({ ... })</code> — returning an object without writing <code
+                class="i">return</code>.</li>
+            <li><code class="i">...prev</code> — the spread operator.</li>
+            <li><code class="i">[e.target.name]</code> — a key worked out while the code runs.</li>
+            <li><code class="i">setForm((prev) =&gt; ...)</code> — reading the previous state safely.</li>
+          </ul>
+          <p class="note">Five ideas, one line. That is the whole deck.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Goal</span><span
+                class="val">Read that line and know what every symbol does</span></span></div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ 1 · ARROW FUNCTIONS ══════════════════════════ -->
+
+      <section class="slide" data-sec="1 · Arrows">
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Concept 1 of 5</div>
+            <h1>Arrow functions</h1>
+            <p class="lede">A shorter way to write a function. Same thing, fewer words.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="1 · Arrows" data-step="Same function, three ways">
+        <div class="top"><span class="step">Arrows</span><span class="sep">/</span><span>The shape</span></div>
+        <div class="body">
+          <h2>The same function, written three ways.</h2>
+          <pre class="sm"><code>// 1 — the long way
+function double(n) {
+  return n * 2;
+}
+
+// 2 — an arrow, with a body
+const double = (n) =&gt; {
+  return n * 2;
+};
+
+// 3 — an arrow, no braces, no return
+const double = (n) =&gt; n * 2;</code></pre>
+          <p class="note">All three are the same function. <code class="i">double(4)</code> gives <code
+              class="i">8</code> every time.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Stress that this is a spelling change, not a new capability. The only real behavioural difference —
+            <code>this</code> binding — never comes up in these tasks.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="1 · Arrows" data-step="The braces rule">
+        <div class="top"><span class="step">Arrows</span><span class="sep">/</span><span>Implicit return</span></div>
+        <div class="body">
+          <h2>Braces mean "I will write <code class="i">return</code> myself."</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label">With braces — you must return</div>
+              <pre class="xs"><code>const f = (n) =&gt; {
+  return n * 2;
+};
+
+f(4)  // 8</code></pre>
+            </div>
+            <div>
+              <div class="pre-label bad">Braces, but no return</div>
+              <pre class="xs brk"><code>const f = (n) =&gt; {
+  n * 2;
+};
+
+f(4)  // undefined</code></pre>
+            </div>
+          </div>
+          <p class="note">A block <code class="i">{ }</code> is a list of instructions. It does not hand anything back
+            unless you say <code class="i">return</code>. Drop the braces and the single expression <em>is</em> the
+            return value.</p>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Common
+                bug</span><span class="val">Braces added, return forgotten — the function quietly returns
+                undefined</span></span></div>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="1 · Arrows" data-step="When you can drop the braces">
+        <div class="top"><span class="step">Arrows</span><span class="sep">/</span><span>When it is allowed</span></div>
+        <div class="body">
+          <h2>One expression, no braces. That is the whole rule.</h2>
+          <pre class="sm good"><code>const double  = (n) =&gt; n * 2;
+const isAdult = (p) =&gt; p.age &gt;= 18;
+const name    = (p) =&gt; p.first + " " + p.last;
+
+// two statements — braces and return are required
+const shout = (s) =&gt; {
+  const trimmed = s.trim();
+  return trimmed.toUpperCase();
+};</code></pre>
+          <p class="note">If you need a second line, you need braces. If one expression says it all, drop them.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="1 · Arrows" data-step="Returning an object">
+        <div class="top"><span class="step">Arrows</span><span class="sep">/</span><span>The parenthesis trap</span>
+        </div>
+        <div class="body">
+          <h2>To return an object, wrap it in parentheses.</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Reads as a code block</div>
+              <pre class="xs brk"><code>(p) =&gt; { name: p.name }
+
+// returns undefined</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Reads as an object</div>
+              <pre class="xs good"><code>(p) =&gt; ({ name: p.name })
+
+// returns { name: "Ada" }</code></pre>
+            </div>
+          </div>
+          <p class="note">JavaScript sees <code class="i">{</code> after the arrow and assumes you are opening a
+            function body. The parentheses say "no — this is a value". This is exactly why the form solution reads
+            <code class="i">setForm((prev) =&gt; ({ ...prev }))</code> and not <code class="i">=&gt; { ...prev }</code>.
+          </p>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Remember</span><span
+                class="val">Arrow, then an object → you need =&gt; ({ })</span></span></div>
+        </div>
+        <div class="nt">
+          <p>This one catches almost everybody in Task 7. If a student's form silently stops updating, this is the
+            first line to look at.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="1 · Arrows" data-step="Where you will see them">
+        <div class="top"><span class="step">Arrows</span><span class="sep">/</span><span>In the tasks</span></div>
+        <div class="body">
+          <h2>Where arrows show up in Week 6&ndash;7.</h2>
+          <pre class="sm"><code>// inside .filter — one expression, no braces
+professionals.filter((p) =&gt; p.id !== id)
+
+// inside .map — returns JSX
+professionals.map((p) =&gt; &lt;Card key={p.id} professional={p} /&gt;)
+
+// as an event handler written inline
+&lt;button onClick={() =&gt; onDelete(p.id)}&gt;Delete&lt;/button&gt;</code></pre>
+          <p class="note"><code class="i">() =&gt;</code> with empty parentheses is a function that takes no arguments.
+            Inline handlers use it to delay the call — <code class="i">onDelete(p.id)</code> alone would run
+            immediately.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <!-- ══════════════════════════ 2 · OBJECT KEYS ══════════════════════════ -->
+
+      <section class="slide" data-sec="2 · Object keys">
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Concept 2 of 5</div>
+            <h1>Square brackets<br />on objects</h1>
+            <p class="lede">For when you don't know the key until the code runs.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="2 · Object keys" data-step="Dot vs brackets">
+        <div class="top"><span class="step">Object keys</span><span class="sep">/</span><span>Reading a value</span>
+        </div>
+        <div class="body">
+          <h2>Two ways to read the same field.</h2>
+          <pre class="sm"><code>const person = { name: "Ada", title: "Engineer" };
+
+person.name       // "Ada"  — dot: you type the key
+person["name"]    // "Ada"  — brackets: you pass a string
+
+const field = "name";
+person[field]     // "Ada"  — the string came from a variable
+person.field      // undefined — looks for a key called "field"</code></pre>
+          <p class="note">Dot notation takes the word you literally typed. Brackets take <em>whatever the expression
+              inside evaluates to</em>, then use that as the key.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="2 · Object keys" data-step="Computed keys">
+        <div class="top"><span class="step">Object keys</span><span class="sep">/</span><span>Writing a value</span>
+        </div>
+        <div class="body">
+          <h2>Brackets work when <em>building</em> an object too.</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Key is the literal word</div>
+              <pre class="xs brk"><code>const field = "title";
+
+{ field: "Engineer" }
+
+// { field: "Engineer" }</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Key is worked out first</div>
+              <pre class="xs good"><code>const field = "title";
+
+{ [field]: "Engineer" }
+
+// { title: "Engineer" }</code></pre>
+            </div>
+          </div>
+          <p class="note">Same rule, mirrored. Without brackets you get a key spelled <code class="i">field</code>.
+            With them you get whatever <code class="i">field</code> holds.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="2 · Object keys" data-step="Why the form needs it">
+        <div class="top"><span class="step">Object keys</span><span class="sep">/</span><span>The real line</span></div>
+        <div class="body">
+          <h2>One handler for every input.</h2>
+          <pre class="sm good"><code>&lt;input name="name"  value={form.name}  onChange={handleChange} /&gt;
+&lt;input name="title" value={form.title} onChange={handleChange} /&gt;
+
+function handleChange(e) {
+  setForm((prev) =&gt; ({ ...prev, [e.target.name]: e.target.value }));
+}</code></pre>
+          <p class="note">Type in the title box and <code class="i">e.target.name</code> is <code
+              class="i">"title"</code>, so <code class="i">[e.target.name]</code> becomes the key <code
+              class="i">title</code>. One function, any number of fields — that is what the brackets buy you.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Payoff</span><span
+                class="val">Add a fourth input and the handler needs no change</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Without computed keys you would need handleNameChange, handleTitleChange, and so on. Worth saying out
+            loud — the brackets are what collapse four handlers into one.</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ 3 · SPREAD ══════════════════════════ -->
+
+      <section class="slide" data-sec="3 · Spread">
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Concept 3 of 5</div>
+            <h1>The spread<br />operator <span class="star">...</span></h1>
+            <p class="lede">"Unpack everything that was in there, into here."</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="3 · Spread" data-step="Arrays">
+        <div class="top"><span class="step">Spread</span><span class="sep">/</span><span>Arrays</span></div>
+        <div class="body">
+          <h2>Copy the old items in, then add yours.</h2>
+          <pre class="sm"><code>const nums = [1, 2, 3];
+
+[...nums]         // [1, 2, 3]        a copy
+[...nums, 4]      // [1, 2, 3, 4]     copy, then append
+[0, ...nums]      // [0, 1, 2, 3]     prepend, then copy
+
+nums              // [1, 2, 3]  — untouched, every time</code></pre>
+          <p class="note">Every one of these builds a <strong>new</strong> array. The original is never modified —
+            that last line is the point.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="3 · Spread" data-step="Objects">
+        <div class="top"><span class="step">Spread</span><span class="sep">/</span><span>Objects</span></div>
+        <div class="body">
+          <h2>Same idea. Later keys win.</h2>
+          <pre class="sm"><code>const person = { name: "Ada", title: "Engineer", age: 36 };
+
+{ ...person }                  // an identical copy
+{ ...person, title: "Lead" }   // copy, then overwrite title
+{ title: "Lead", ...person }   // copy wins — title is "Engineer"</code></pre>
+          <p class="note">Order decides the winner. Put your change <strong>after</strong> the spread or the old value
+            overwrites it — a bug that looks like "my update did nothing".</p>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Order
+                matters</span><span class="val">Your change goes after the ... not before</span></span></div>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="3 · Spread" data-step="Why React needs it">
+        <div class="top"><span class="step">Spread</span><span class="sep">/</span><span>Why not just push</span></div>
+        <div class="body">
+          <h2>React looks for a <em>new</em> object, not a changed one.</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Changes the old array</div>
+              <pre class="xs brk"><code>list.push(item);
+setList(list);
+
+// same array →
+// React sees no change →
+// nothing re-renders</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Builds a new array</div>
+              <pre class="xs good"><code>setList([...list, item]);
+
+
+
+// new array →
+// React re-renders</code></pre>
+            </div>
+          </div>
+          <p class="note">React compares the old value to the new one by identity. Mutating in place leaves it holding
+            the same thing it already had, so it concludes nothing happened.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The push version is the single most common "my code is right but the screen won't update" bug in these
+            tasks. Same applies to sort and splice — both mutate.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="3 · Spread" data-step="Both at once">
+        <div class="top"><span class="step">Spread</span><span class="sep">/</span><span>The real line</span></div>
+        <div class="body">
+          <h2>Two spreads, one statement.</h2>
+          <pre class="sm good"><code>setProfessionals((prev) =&gt; [
+  ...prev,
+  { ...values, id: crypto.randomUUID() },
+]);</code></pre>
+          <ul class="pts tight">
+            <li><code class="i">...prev</code> — every professional already in the list.</li>
+            <li><code class="i">...values</code> — every field the form collected.</li>
+            <li><code class="i">id:</code> after the spread, so it is added to the copy.</li>
+          </ul>
+          <p class="note">An array spread and an object spread doing the same job at two levels: copy what was there,
+            add what is new, change nothing in place.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Task 7</span><span
+                class="val">This is the add-a-professional solution, in full</span></span></div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ 4 · UPDATER FUNCTION ══════════════════════════ -->
+
+      <section class="slide" data-sec="4 · prev">
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Concept 4 of 5</div>
+            <h1>setState<br />(<span class="star">prev</span>) =&gt; </h1>
+            <p class="lede">Asking React for the current value instead of guessing it.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="4 · prev" data-step="Two ways to set">
+        <div class="top"><span class="step">prev</span><span class="sep">/</span><span>The two forms</span></div>
+        <div class="body">
+          <h2>Pass a value, or pass a function.</h2>
+          <pre class="sm"><code>const [count, setCount] = useState(0);
+
+// a value — "make it this"
+setCount(5);
+
+// a function — "take what it is, give me what it becomes"
+setCount((prev) =&gt; prev + 1);</code></pre>
+          <p class="note"><code class="i">prev</code> is just a parameter name — React fills it in with the current
+            value when it runs your function. <code class="i">(c) =&gt; c + 1</code> works identically.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="4 · prev" data-step="Why it matters">
+        <div class="top"><span class="step">prev</span><span class="sep">/</span><span>The stale value</span></div>
+        <div class="body">
+          <h2>Setting state does not change the variable you are holding.</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Reads a frozen count</div>
+              <pre class="xs brk"><code>setCount(count + 1);
+setCount(count + 1);
+
+// count was 0 for both
+// result: 1</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Reads the live count</div>
+              <pre class="xs good"><code>setCount((p) =&gt; p + 1);
+setCount((p) =&gt; p + 1);
+
+
+// result: 2</code></pre>
+            </div>
+          </div>
+          <p class="note">During one render <code class="i">count</code> is a fixed number — it does not update
+            mid-function. The updater form runs later, when React knows the real value.</p>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Stale
+                state</span><span class="val">Two updates in a row, only one lands</span></span></div>
+        </div>
+        <div class="nt">
+          <p>If someone doubts it, have them add two setCount calls to the counter task and watch it go up by one.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="4 · prev" data-step="The habit">
+        <div class="top"><span class="step">prev</span><span class="sep">/</span><span>When to use which</span></div>
+        <div class="body">
+          <h2>Does the new value depend on the old one?</h2>
+          <ul class="pts">
+            <li><strong>Yes → use the function.</strong><span class="sub">Adding to a list, toggling a boolean,
+                counting, editing one field of a form.</span></li>
+            <li><strong>No → pass the value.</strong><span class="sub">Resetting a form, storing what someone typed,
+                setting an id you already have.</span></li>
+          </ul>
+          <pre class="xs good"><code>setOpen((prev) =&gt; !prev);                    // depends on old
+setList((prev) =&gt; prev.filter((p) =&gt; p.id !== id));  // depends on old
+setForm(EMPTY_FORM);                          // does not
+setQuery(e.target.value);                     // does not</code></pre>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <!-- ══════════════════════════ 5 · JSX ══════════════════════════ -->
+
+      <section class="slide" data-sec="5 · JSX">
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Concept 5 of 5</div>
+            <h1>HTML that is<br />actually JSX</h1>
+            <p class="lede">It looks like the markup you know. A few words changed.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="5 · JSX" data-step="The renamed attributes">
+        <div class="top"><span class="step">JSX</span><span class="sep">/</span><span>What changed</span></div>
+        <div class="body">
+          <h2>Four differences you will hit immediately.</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>HTML</th>
+                  <th>JSX</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code class="i">class</code></td>
+                  <td><code class="i">className</code></td>
+                  <td><code class="i">class</code> is a reserved word in JavaScript</td>
+                </tr>
+                <tr>
+                  <td><code class="i">for</code></td>
+                  <td><code class="i">htmlFor</code></td>
+                  <td>so is <code class="i">for</code></td>
+                </tr>
+                <tr>
+                  <td><code class="i">onclick</code></td>
+                  <td><code class="i">onClick</code></td>
+                  <td>events are camelCase, and take a function not a string</td>
+                </tr>
+                <tr>
+                  <td><code class="i">&lt;br&gt;</code></td>
+                  <td><code class="i">&lt;br /&gt;</code></td>
+                  <td>every tag must be closed</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">Curly braces mean "JavaScript goes here": <code class="i">className="btn"</code> is a string,
+            <code class="i">onClick={handle}</code> is a value.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="5 · JSX" data-step="The event object">
+        <div class="top"><span class="step">JSX</span><span class="sep">/</span><span>What e holds</span></div>
+        <div class="body">
+          <h2>Every handler is handed an event.</h2>
+          <pre class="sm"><code>&lt;input name="title" onChange={handleChange} /&gt;
+
+function handleChange(e) {
+  e.target          // the input element itself
+  e.target.name     // "title"  — its name attribute
+  e.target.value    // what is currently typed in it
+}</code></pre>
+          <p class="note"><code class="i">e</code> is just the parameter name — React passes the event in whether you
+            name it <code class="i">e</code>, <code class="i">event</code> or anything else. <code
+              class="i">e.target</code> is always the element the event came from.</p>
+        </div>
+        <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="5 · JSX" data-step="Forms">
+        <div class="top"><span class="step">JSX</span><span class="sep">/</span><span>preventDefault</span></div>
+        <div class="body">
+          <h2>A form's default job is to reload the page.</h2>
+          <pre class="sm good"><code>function handleSubmit(e) {
+  e.preventDefault();
+  onSubmit(form);
+}
+
+&lt;form onSubmit={handleSubmit}&gt;</code></pre>
+          <p class="note">Without that first line the browser submits the form the old-fashioned way: full page reload,
+            every piece of state gone, your handler's work thrown away. It looks like a crash. It is a page refresh.</p>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Symptom</span><span
+                class="val">The page flashes and the list empties itself</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Also worth flagging: a bare button inside a form defaults to type="submit". That is why the deck writes
+            type="button" on Delete and Edit.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="5 · JSX" data-step="Controlled inputs">
+        <div class="top"><span class="step">JSX</span><span class="sep">/</span><span>value + onChange</span></div>
+        <div class="body">
+          <h2>React holds the text. The input just displays it.</h2>
+          <pre class="sm"><code>&lt;input
+  name="title"
+  value={form.title}      // state decides what is shown
+  onChange={handleChange} // typing asks state to change
+/&gt;</code></pre>
+          <p class="note">The pair is the point. <code class="i">value</code> without <code class="i">onChange</code>
+            gives you a box you cannot type in — the state never changes, so the displayed value never does either.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Loop</span><span
+                class="val">type → onChange → setState → re-render → new value</span></span></div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════ CLOSE ══════════════════════════ -->
+
+      <section class="slide" data-sec="Close" data-step="The line, decoded">
+        <div class="top"><span class="step">Close</span><span class="sep">/</span><span>Back to the start</span></div>
+        <div class="body">
+          <h2>The line from slide two.</h2>
+          <pre class="sm good"><code>setForm((prev) =&gt; ({ ...prev, [e.target.name]: e.target.value }));</code></pre>
+          <ul class="pts tight">
+            <li>Give React a <strong>function</strong>, so it hands back the real current form.</li>
+            <li><code class="i">=&gt; ({ })</code> — parentheses, because we are returning an object.</li>
+            <li><code class="i">...prev</code> — copy every field we are not touching.</li>
+            <li><code class="i">[e.target.name]</code> — the key is whichever input was typed in.</li>
+            <li><code class="i">e.target.value</code> — set it to what is now in that box.</li>
+          </ul>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Decoded</span><span
+                class="val">Five ideas, one line — nothing left unexplained</span></span></div>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Close">
+        <div class="top"></div>
+        <div class="body">
+          <div class="title-wrap">
+            <div class="eyebrow">Five concepts · complete</div>
+            <h1 class="big">Now the React<br />is the only<br />new thing.</h1>
+            <p class="lede">Open Week 6&ndash;7. When a solution looks unreadable, it is usually one of these five
+              wearing a disguise.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Point them back here rather than re-explaining syntax mid-task — the jump menu (press O) goes straight to
+            the concept.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="notes">
+    <div class="nh">Notes — press N to hide</div>
+    <div class="nb" id="notesBody"></div>
+  </div>
+  <div id="bar"><i></i></div>
+  <div id="hud">
+    <button id="btnPrev" type="button" aria-label="Previous slide">←</button>
+    <button id="btnNext" type="button" aria-label="Next slide">→</button>
+    <span id="counter">1 / 1</span>
+    <button id="btnNotes" type="button">N</button>
+    <button id="btnJump" type="button">O</button>
+    <button id="btnTheme" type="button">◐</button>
+    <button id="btnFull" type="button">F</button>
+  </div>
+  <div id="jump" aria-label="Slide index"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* ---------- syntax highlighting ----------
+         Runs over textContent (already-decoded source), escaping as it emits,
+         so entity handling happens exactly once. */
+      function esc(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      var RE = new RegExp([
+        "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)",                                   // 1 comment
+        "(`(?:\\\\[\\s\\S]|[^`\\\\])*`|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|'(?:\\\\[\\s\\S]|[^'\\\\])*')", // 2 string
+        "(<\\/?[A-Za-z][\\w.]*)",                                                   // 3 jsx tag
+        "\\b(const|let|var|function|return|if|else|for|of|in|while|new|async|await|try|catch|finally|throw|import|export|default|from|typeof|null|undefined|true|false)\\b", // 4 keyword
+        "\\b(\\d+(?:\\.\\d+)?)\\b",                                                 // 5 number
+        "\\b([A-Za-z_$][\\w$]*)(?=\\s*\\()"                                         // 6 call
+      ].join("|"), "g");
+
+      var CLS = { 1: "t-com", 2: "t-str", 3: "t-tag", 4: "t-kw", 5: "t-num", 6: "t-fn" };
+
+      function highlight(src) {
+        var out = "", last = 0, m;
+        RE.lastIndex = 0;
+        while ((m = RE.exec(src)) !== null) {
+          if (m[0] === "") { RE.lastIndex++; continue; }
+          out += esc(src.slice(last, m.index));
+          var cls = null;
+          for (var g = 1; g <= 6; g++) { if (m[g] !== undefined) { cls = CLS[g]; break; } }
+          out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+          last = m.index + m[0].length;
+        }
+        return out + esc(src.slice(last));
+      }
+
+      var blocks = document.querySelectorAll("pre code");
+      for (var i = 0; i < blocks.length; i++) {
+        blocks[i].innerHTML = highlight(blocks[i].textContent);
+      }
+
+      /* ---------- deck ---------- */
+      var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+      var stage = document.getElementById("stage");
+      var viewport = document.getElementById("viewport");
+      var notes = document.getElementById("notes");
+      var notesBody = document.getElementById("notesBody");
+      var jump = document.getElementById("jump");
+      var counter = document.getElementById("counter");
+      var barFill = document.querySelector("#bar > i");
+      var cur = 0;
+
+      function fit() {
+        var pad = 24;
+        var chrome = notes.classList.contains("on") ? notes.offsetHeight : 0;
+        var w = window.innerWidth - pad * 2;
+        var h = window.innerHeight - chrome - 46;
+        var s = Math.min(w / 1280, h / 720);
+        stage.style.transform = "scale(" + s + ")";
+        viewport.style.paddingBottom = (chrome + 20) + "px";
+      }
+
+      function show(n) {
+        cur = Math.max(0, Math.min(slides.length - 1, n));
+        for (var i = 0; i < slides.length; i++) {
+          slides[i].classList.toggle("on", i === cur);
+        }
+        counter.textContent = (cur + 1) + " / " + slides.length;
+        barFill.style.width = ((cur + 1) / slides.length * 100) + "%";
+        var nt = slides[cur].querySelector(".nt");
+        notesBody.innerHTML = nt ? nt.innerHTML : "<p><em>No notes for this slide.</em></p>";
+        var rows = jump.querySelectorAll(".jrow");
+        for (var j = 0; j < rows.length; j++) rows[j].classList.toggle("cur", j === cur);
+        try { location.hash = String(cur + 1); } catch (e) { }
+      }
+
+      /* jump menu, grouped by section */
+      (function buildJump() {
+        var html = "", lastSec = null, open = false;
+        slides.forEach(function (s, i) {
+          var sec = s.getAttribute("data-sec") || "—";
+          var h = s.querySelector("h1, h2, h3");
+          var label = s.getAttribute("data-step") || (h ? h.textContent.trim() : "Slide " + (i + 1));
+          if (label.length > 52) label = label.slice(0, 50) + "…";
+          if (sec !== lastSec) {
+            if (open) html += "</div>";
+            html += "<h4>" + esc(sec) + '</h4><div class="jgrid">';
+            lastSec = sec; open = true;
+          }
+          html += '<button type="button" class="jrow" data-i="' + i + '">' +
+            '<span class="jn">' + String(i + 1).padStart(2, "0") + "</span>" +
+            "<span>" + esc(label) + "</span></button>";
+        });
+        if (open) html += "</div>";
+        jump.innerHTML = html;
+        jump.addEventListener("click", function (e) {
+          var btn = e.target.closest(".jrow");
+          if (!btn) return;
+          jump.classList.remove("on");
+          show(parseInt(btn.getAttribute("data-i"), 10));
+        });
+      })();
+
+      function toggleNotes() { notes.classList.toggle("on"); fit(); }
+      function toggleJump() { jump.classList.toggle("on"); }
+      function toggleTheme() {
+        var root = document.documentElement;
+        var now = root.getAttribute("data-theme");
+        if (!now) {
+          now = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        root.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+      }
+      function toggleFull() {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var k = e.key;
+        if (jump.classList.contains("on") && k === "Escape") { jump.classList.remove("on"); return; }
+        if (k === "ArrowRight" || k === "PageDown" || k === " " || k === "j") { e.preventDefault(); show(cur + 1); }
+        else if (k === "ArrowLeft" || k === "PageUp" || k === "k") { e.preventDefault(); show(cur - 1); }
+        else if (k === "Home") { e.preventDefault(); show(0); }
+        else if (k === "End") { e.preventDefault(); show(slides.length - 1); }
+        else if (k === "n" || k === "N") { toggleNotes(); }
+        else if (k === "o" || k === "O") { toggleJump(); }
+        else if (k === "f" || k === "F") { toggleFull(); }
+        else if (k === "t" || k === "T") { toggleTheme(); }
+      });
+
+      document.getElementById("btnPrev").addEventListener("click", function () { show(cur - 1); });
+      document.getElementById("btnNext").addEventListener("click", function () { show(cur + 1); });
+      document.getElementById("btnNotes").addEventListener("click", toggleNotes);
+      document.getElementById("btnJump").addEventListener("click", toggleJump);
+      document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+      document.getElementById("btnFull").addEventListener("click", toggleFull);
+
+      window.addEventListener("resize", fit);
+      document.addEventListener("fullscreenchange", fit);
+
+      var start = parseInt((location.hash || "").replace("#", ""), 10);
+      show(isNaN(start) ? 0 : start - 1);
+      fit();
+    })();
+  </script>
+</body>
+
