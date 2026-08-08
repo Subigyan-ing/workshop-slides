@@ -342,6 +342,18 @@
       white-space: nowrap;
     }
 
+    a.deck-link {
+      font-family: var(--mono);
+      color: var(--ok);
+      text-decoration: none;
+      border-bottom: 1px solid var(--ok);
+      padding-bottom: 1px;
+    }
+
+    a.deck-link:hover {
+      background: var(--bg-3);
+    }
+
     strong {
       font-weight: 700;
       color: var(--ink);
@@ -892,6 +904,40 @@
           </div>
         </div>
         <div class="foot"></div>
+      </section>
+
+      <section class="slide" data-sec="Start" data-step="Stuck on the JavaScript?">
+        <div class="top"><span class="step">Start</span><span class="sep">/</span><span>Before you begin</span></div>
+        <div class="body">
+          <h2>If the JavaScript is what's confusing, that isn't React.</h2>
+          <p class="note">These solutions are written in a handful of JavaScript idioms that have nothing to do with
+            React. If a line looks unreadable, it is usually one of these — not the React around it.</p>
+          <ul class="pts tight">
+            <li><code class="i">(p) =&gt; p.id !== id</code> — arrow functions, and returning without <code
+                class="i">return</code>.</li>
+            <li><code class="i">[e.target.name]</code> — square brackets working out a key while the code runs.</li>
+            <li><code class="i">...prev</code> — the spread operator, and why you never <code class="i">push</code>.
+            </li>
+            <li><code class="i">setForm((prev) =&gt; ...)</code> — reading the current state safely.</li>
+          </ul>
+          <div class="callout info">
+            <span class="bar"></span>
+            <div class="inner">
+              <div class="kicker">Go read this first</div>
+              <p><a class="deck-link" href="js-essentials.html">JavaScript Before React</a> — the companion deck. Five
+                concepts, twenty minutes, every example taken from these nine tasks.</p>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">Rule of
+                thumb</span><span class="val">Syntax you don't recognise → the primer. Behaviour you don't expect →
+                ask</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Worth 30 seconds out loud. Most people who stall on these tasks are stuck on the JavaScript, not the
+            React, and will not say so unless you name it first.</p>
+        </div>
       </section>
 
       <section class="slide" data-sec="Start" data-step="How this works">
