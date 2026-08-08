@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>React Workshop — Slides</title>
+  <style>
+    /* ============================================================
+   React Workshop — slide index
+   Same palette as the decks. Quiet page, one job:
+   get a student into the right deck in one click.
+   ============================================================ */
+
+    :root {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --accent: #45C08A;
+
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+        "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg: #EFF2F5;
+        --bg-2: #FBFCFD;
+        --bg-3: #E4E9EE;
+        --ink: #131A21;
+        --ink-2: #56677A;
+        --ink-3: #7B8B9C;
+        --rule: #D0D9E1;
+        --accent: #1B7A50;
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg: #EFF2F5;
+      --bg-2: #FBFCFD;
+      --bg-3: #E4E9EE;
+      --ink: #131A21;
+      --ink-2: #56677A;
+      --ink-3: #7B8B9C;
+      --rule: #D0D9E1;
+      --accent: #1B7A50;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --accent: #45C08A;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 12vh 24px 96px;
+    }
+
+    /* ---------- masthead ---------- */
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 0 0 18px;
+    }
+
+    h1 {
+      font-size: clamp(34px, 7vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -.02em;
+      margin: 0 0 20px;
+      font-weight: 650;
+    }
+
+    .lede {
+      color: var(--ink-2);
+      font-size: 17px;
+      max-width: 46ch;
+      margin: 0 0 56px;
+    }
+
+    /* ---------- deck list ---------- */
+    .section-label {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 8px;
+    }
+
+    ul.decks {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    ul.decks li {
+      border-bottom: 1px solid var(--rule);
+    }
+
+    a.deck {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+      padding: 22px 16px 22px 4px;
+      text-decoration: none;
+      color: inherit;
+      border-radius: 8px;
+      transition: background .15s ease, padding-left .15s ease;
+    }
+
+    a.deck:hover,
+    a.deck:focus-visible {
+      background: var(--bg-2);
+      padding-left: 14px;
+      outline: none;
+    }
+
+    a.deck:focus-visible {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .week {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      flex: 0 0 68px;
+      letter-spacing: .04em;
+    }
+
+    .body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .title {
+      display: block;
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      margin: 0 0 4px;
+    }
+
+    .desc {
+      display: block;
+      font-size: 14.5px;
+      color: var(--ink-2);
+      margin: 0;
+    }
+
+    .arrow {
+      color: var(--ink-3);
+      font-size: 18px;
+      flex: 0 0 auto;
+      transition: transform .15s ease, color .15s ease;
+    }
+
+    a.deck:hover .arrow,
+    a.deck:focus-visible .arrow {
+      color: var(--accent);
+      transform: translateX(3px);
+    }
+
+    /* ---------- footer ---------- */
+    footer {
+      margin-top: 56px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+      color: var(--ink-3);
+      font-size: 13.5px;
+    }
+
+    kbd {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--bg-3);
+      border: 1px solid var(--rule);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--ink-2);
+    }
+
+    @media (max-width: 560px) {
+      .wrap {
+        padding-top: 8vh;
+      }
+
+      a.deck {
+        gap: 14px;
+      }
+
+      .week {
+        flex-basis: 52px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <p class="eyebrow">Course slides</p>
+    <h1>React Workshop</h1>
+    <p class="lede">
+      Every deck from the workshop, in one place. Open one and use
+      <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to move between slides.
+    </p>
+
+    <p class="section-label">Decks</p>
+
+    <!-- Add a new deck: copy one <li> block, change the file, week and title. -->
+    <ul class="decks">
+      <li>
+        <a class="deck" href="week-7.html">
+          <span class="week">Week 6</span>
+          <span class="body">
+            <span class="title">Nine Tasks</span>
+            <span class="desc">State, events, lists and forms — you write the React.</span>
+          </span>
+          <span class="arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </li>
+    </ul>
+
+    <footer>
+      More decks are added here as the workshop goes on.
+    </footer>
+  </div>
+</body>
+
+</html>
