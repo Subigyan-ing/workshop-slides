@@ -1,0 +1,1905 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workshop 7 — Connecting React to the API</title>
+  <style>
+    /* ============================================================
+   React Workshop — Week 6
+   Design: the plan's own arc is break → fix → checkpoint.
+   Two colours carry it. Everything else stays quiet.
+   Break  = hatched rail + the word BREAK IT
+   Repair = dotted rail + the word FIX IT
+   Green  = solid rail + APP WORKS NOW
+   (form + word, never hue alone)
+   ============================================================ */
+
+    :root {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+        "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #EFF2F5;
+        --bg-2: #FBFCFD;
+        --bg-3: #E4E9EE;
+        --ink: #131A21;
+        --ink-2: #56677A;
+        --ink-3: #7B8B9C;
+        --rule: #D0D9E1;
+        --break: #C7362A;
+        --ok: #1B7A50;
+
+        --t-com: #78889B;
+        --t-kw: #1B5FBF;
+        --t-str: #96551A;
+        --t-tag: #0B6E60;
+        --t-num: #6B3FA0;
+        --t-fn: #8A6A08;
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg: #EFF2F5;
+      --bg-2: #FBFCFD;
+      --bg-3: #E4E9EE;
+      --ink: #131A21;
+      --ink-2: #56677A;
+      --ink-3: #7B8B9C;
+      --rule: #D0D9E1;
+      --break: #C7362A;
+      --ok: #1B7A50;
+      --t-com: #78889B;
+      --t-kw: #1B5FBF;
+      --t-str: #96551A;
+      --t-tag: #0B6E60;
+      --t-num: #6B3FA0;
+      --t-fn: #8A6A08;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- stage ---------- */
+    #viewport {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #stage {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      transform-origin: center center;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      grid-template-rows: auto 1fr auto;
+      padding: 0;
+    }
+
+    .slide.on {
+      display: grid;
+    }
+
+    /* ---------- chrome ---------- */
+    .top {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 22px 56px 0 56px;
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .top .step {
+      color: var(--ink-2);
+    }
+
+    .top .sep {
+      color: var(--rule);
+    }
+
+    .top .time {
+      margin-left: auto;
+      letter-spacing: .06em;
+    }
+
+    .body {
+      padding: 24px 56px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .foot {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 56px 22px 56px;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      min-height: 20px;
+    }
+
+    /* status bar — form-encoded, not hue-encoded */
+    .status {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .status .rail {
+      width: 8px;
+      border-radius: 1px;
+    }
+
+    .status .txt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status .tag {
+      font-weight: 700;
+    }
+
+    .status .val {
+      color: var(--ink-2);
+      text-transform: none;
+      letter-spacing: .02em;
+      font-size: 14px;
+    }
+
+    .status.ok .rail {
+      background: var(--ok);
+    }
+
+    .status.ok .tag {
+      color: var(--ok);
+    }
+
+    .status.brk .rail {
+      background: repeating-linear-gradient(45deg, var(--break) 0 4px, transparent 4px 8px);
+    }
+
+    .status.brk .tag {
+      color: var(--break);
+    }
+
+    .status.fix .rail {
+      background: repeating-linear-gradient(to bottom, var(--ok) 0 3px, transparent 3px 7px);
+    }
+
+    .status.fix .tag {
+      color: var(--ok);
+    }
+
+    /* ---------- type ---------- */
+    h1.big {
+      font-family: var(--mono);
+      font-size: 68px;
+      line-height: 1.04;
+      letter-spacing: -.03em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 42px;
+      line-height: 1.12;
+      letter-spacing: -.025em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      margin: 0;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    p.lede {
+      font-size: 25px;
+      line-height: 1.45;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 62ch;
+    }
+
+    p.note {
+      font-size: 20px;
+      line-height: 1.5;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 68ch;
+    }
+
+    ul.pts {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    ul.pts>li {
+      font-size: 24px;
+      line-height: 1.4;
+      color: var(--ink);
+      padding-left: 26px;
+      position: relative;
+      max-width: 66ch;
+    }
+
+    ul.pts>li::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: .62em;
+      width: 7px;
+      height: 2px;
+      background: var(--ink-3);
+    }
+
+    ul.pts>li .sub {
+      display: block;
+      font-size: 19px;
+      color: var(--ink-2);
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+
+    ul.tight>li {
+      font-size: 21px;
+    }
+
+    code.i {
+      font-family: var(--mono);
+      font-size: .93em;
+      background: var(--bg-3);
+      color: var(--ink);
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    em {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+
+    /* ---------- code blocks ---------- */
+    pre {
+      margin: 0;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--rule);
+      border-radius: 4px;
+      padding: 20px 24px;
+      overflow-x: auto;
+    }
+
+    pre code {
+      font-family: var(--mono);
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--ink);
+      white-space: pre;
+      display: block;
+    }
+
+    pre.sm code {
+      font-size: 18.5px;
+      line-height: 1.5;
+    }
+
+    pre.xs code {
+      font-size: 16.5px;
+      line-height: 1.45;
+    }
+
+    pre.brk {
+      border-left-color: var(--break);
+    }
+
+    pre.good {
+      border-left-color: var(--ok);
+    }
+
+    .t-com {
+      color: var(--t-com);
+      font-style: italic;
+    }
+
+    .t-kw {
+      color: var(--t-kw);
+    }
+
+    .t-str {
+      color: var(--t-str);
+    }
+
+    .t-tag {
+      color: var(--t-tag);
+    }
+
+    .t-num {
+      color: var(--t-num);
+    }
+
+    .t-fn {
+      color: var(--t-fn);
+    }
+
+    .pre-label {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 8px;
+    }
+
+    .pre-label.bad {
+      color: var(--break);
+    }
+
+    .pre-label.good {
+      color: var(--ok);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .cols.wide {
+      gap: 30px;
+    }
+
+    /* ---------- section cards ---------- */
+    .section-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .section-card h1 {
+      font-size: 62px;
+    }
+
+    .star {
+      color: var(--ok);
+    }
+
+    /* ---------- callouts ---------- */
+    .callout {
+      display: grid;
+      grid-template-columns: 8px 1fr;
+      gap: 22px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 26px 28px 26px 0;
+      align-items: stretch;
+    }
+
+    .callout .bar {
+      background: repeating-linear-gradient(45deg, var(--break) 0 5px, transparent 5px 10px);
+      border-radius: 2px;
+    }
+
+    .callout .inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .callout .kicker {
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--break);
+      font-weight: 700;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.45;
+      color: var(--ink);
+      max-width: 64ch;
+    }
+
+    .callout.info .bar {
+      background: var(--ink-3);
+    }
+
+    .callout.info .kicker {
+      color: var(--ink-2);
+    }
+
+    /* ---------- the loop diagram ---------- */
+    .loop {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .loop .node {
+      font-family: var(--mono);
+      font-size: 19px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 12px 16px;
+      color: var(--ink);
+    }
+
+    .loop .arrow {
+      color: var(--ink-3);
+      font-family: var(--mono);
+      font-size: 19px;
+    }
+
+    .loop .node.hi {
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    /* ---------- table ---------- */
+    .tbl-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 500px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 17.5px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding: 0 14px 10px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    tbody td {
+      padding: 11px 14px 11px 0;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+      line-height: 1.35;
+    }
+
+    tbody td:first-child {
+      color: var(--ink);
+      width: 47%;
+    }
+
+    tbody td:last-child {
+      color: var(--ink-2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ---------- title slide ---------- */
+    .title-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      gap: 26px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 16px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .title-meta {
+      display: flex;
+      gap: 34px;
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--ink-2);
+      letter-spacing: .04em;
+      flex-wrap: wrap;
+    }
+
+    .title-meta span {
+      display: flex;
+      gap: 9px;
+      align-items: baseline;
+    }
+
+    .title-meta b {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 34px;
+    }
+
+    .roadmap .rm {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 14px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 18.5px;
+    }
+
+    .roadmap .rm .n {
+      font-family: var(--mono);
+      color: var(--ink-3);
+      font-size: 15px;
+    }
+
+    .roadmap .rm .t {
+      color: var(--ink);
+    }
+
+    .roadmap .rm .d {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink-3);
+    }
+
+    .roadmap .hd {
+      grid-column: 1 / -1;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-top: 6px;
+    }
+
+    /* ---------- app chrome outside stage ---------- */
+    #bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: var(--rule);
+      z-index: 40;
+    }
+
+    #bar>i {
+      display: block;
+      height: 100%;
+      background: var(--ink-2);
+      width: 0;
+      transition: width .18s ease;
+    }
+
+    #hud {
+      position: fixed;
+      right: 16px;
+      bottom: 14px;
+      z-index: 41;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink-3);
+    }
+
+    #hud button {
+      font: inherit;
+      color: var(--ink-2);
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 5px 10px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    #hud button:hover {
+      color: var(--ink);
+      border-color: var(--ink-3);
+    }
+
+    #hud button:focus-visible,
+    #jump:focus-visible,
+    .jrow:focus-visible {
+      outline: 2px solid var(--ok);
+      outline-offset: 2px;
+    }
+
+    #counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- notes ---------- */
+    #notes {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      z-index: 39;
+      background: var(--bg-2);
+      border-top: 1px solid var(--rule);
+      padding: 16px 22px 18px;
+      max-height: 34vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #notes.on {
+      display: block;
+    }
+
+    #notes .nh {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 9px;
+    }
+
+    #notes .nb {
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      max-width: 100ch;
+    }
+
+    #notes .nb p {
+      margin: 0 0 8px;
+    }
+
+    #notes .nb p:last-child {
+      margin-bottom: 0;
+    }
+
+    #notes .nb em {
+      color: var(--ink-2);
+    }
+
+    #notes .nb code {
+      font-family: var(--mono);
+      font-size: .92em;
+      background: var(--bg-3);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .nt {
+      display: none;
+    }
+
+    /* ---------- jump menu ---------- */
+    #jump {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: var(--bg);
+      display: none;
+      padding: 30px 40px;
+      overflow-y: auto;
+    }
+
+    #jump.on {
+      display: block;
+    }
+
+    #jump h4 {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 22px 0 8px;
+    }
+
+    #jump h4:first-child {
+      margin-top: 0;
+    }
+
+    .jgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 4px 26px;
+    }
+
+    .jrow {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: baseline;
+      padding: 6px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      text-align: left;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      width: 100%;
+    }
+
+    .jrow:hover {
+      background: var(--bg-2);
+    }
+
+    .jrow .jn {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .jrow.cur {
+      background: var(--bg-3);
+    }
+
+    .jrow.cur .jn {
+      color: var(--ok);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="viewport">
+    <div id="stage">
+
+      <section class="slide" data-sec="Front">
+        <div class="top"></div>
+        <div class="body">
+          <div class="title-wrap">
+            <div class="eyebrow">React Workshop · Level 4</div>
+            <h1 class="big">Workshop 7<br />Connecting React<br />to the API</h1>
+            <p class="lede">Replace the in-memory CRUD with real HTTP calls. The database becomes the source of truth.</p>
+            <div class="title-meta">
+              <span>8 steps</span>
+              <span>2 hands-on tasks</span>
+              <span><b>The app runs at the end of every step.</b></span>
+            </div>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Open with the Workshop 6 app already running, and the backend running in a second terminal. Both visible before you say a word.</p>
+          <p>Set the expectation: <em>today you will break the app on purpose, once. When it breaks, the first question is always "which side?"</em></p>
+          <p>Navigation: <code>→</code> next, <code>←</code> back, <code>N</code> notes, <code>O</code> jump menu, <code>F</code> fullscreen.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 0">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 00</div>
+            <h1>Two servers,<br />two terminals</h1>
+            <p class="lede">Run the API and the React app side by side.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Check everyone has run the pre-work installs: <code>cors</code> in the backend, <code>axios</code> in the frontend. Doing it live is the easiest fifteen minutes to lose.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 0" data-step="Setup">
+        <div class="top"><span class="step">Step 0</span><span class="sep">/</span><span>Setup</span></div>
+        <div class="body">
+          <h2>Two processes, two ports</h2>
+          <pre class="sm"><code># Terminal 1 — the API
+cd professionals-backend
+npm run dev                 # http://localhost:5000
+
+# Terminal 2 — the React app
+cd professionals-frontend
+npm run dev                 # http://localhost:5173</code></pre>
+          <p class="note">When something breaks today, the first question is always: <strong>which side?</strong> Backend errors appear in Terminal 1. Frontend errors appear in the browser console.</p>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Prove the API works <strong>before</strong> touching React — open <code class="i">http://localhost:5000/api/professionals</code> in a browser tab. Raw JSON in a tab is the anchor for everything today.</p>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Unchanged from Workshop 6</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Open the <strong>Network tab</strong> now and leave it open all session. Half of today's debugging happens there.</p>
+          <p>Walk the room during this step. Anyone whose backend won't start needs fixing now, not in Step 3.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 1">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 01</div>
+            <h1>async / await<br />recap</h1>
+            <p class="lede">Every request takes time. This is the syntax for handling that.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Three minutes on the idea, five on the syntax. Resist going deeper on promises — they need three words, not a lecture.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 1" data-step="The shift">
+        <div class="top"><span class="step">Step 1</span><span class="sep">/</span><span>The shift</span></div>
+        <div class="body">
+          <h2>The component stops being the source of truth</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label">Until today</div>
+              <p class="note">State holds the list. The component <strong>owns</strong> the data. Refresh and it's gone.</p>
+            </div>
+            <div>
+              <div class="pre-label good">From today</div>
+              <p class="note">The database holds the list. The component <strong>asks for</strong> the data and displays it.</p>
+            </div>
+          </div>
+          <pre class="sm"><code>component  →  HTTP request  →  Express  →  Mongoose  →  MongoDB
+                                                            ↓
+component  ←    response     ←  Express  ←  Mongoose  ←  MongoDB</code></pre>
+          <p class="note">The cost of that round trip: <strong>everything becomes asynchronous.</strong> That's what the next slide is for.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Draw this on the board rather than relying on the slide. Students refer back to a board diagram all session; they don't scroll back through slides.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 1" data-step="async">
+        <div class="top"><span class="step">Step 1</span><span class="sep">/</span><span>async &amp; await</span></div>
+        <div class="body">
+          <h2>The three keywords</h2>
+          <pre class="sm"><code>async function loadData() {
+  try {
+    const res = await axios.get(url);   // await = wait for the answer
+    console.log(res.data);
+  } catch (error) {
+    // runs only if it failed
+  } finally {
+    // runs either way — this is where loading gets switched off
+  }
+}</code></pre>
+          <ul class="pts">
+            <li><strong><code class="i">async</code></strong> marks a function that is allowed to wait.</li>
+            <li><strong><code class="i">await</code></strong> pauses until the answer arrives — only legal inside <code class="i">async</code>.</li>
+            <li><strong><code class="i">finally</code></strong> runs whether it worked or not.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Don't teach <code>.then()</code> chains today. If someone asks, say it's the same thing written differently and move on.</p>
+          <p><code>finally</code> looks pointless right now. Flag that it earns its place in Step 4.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 02</div>
+            <h1>axios</h1>
+            <p class="lede">The HTTP client we'll use for every request today.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Slide only — nobody writes <code>fetch</code> today. The point is that they recognise it when a tutorial uses it.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="What it is">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>What it is</span></div>
+        <div class="body">
+          <h2>An HTTP client for JavaScript</h2>
+          <ul class="pts">
+            <li><strong>A library for sending HTTP requests</strong> and reading the responses — installed with <code class="i">npm install axios</code>.</li>
+            <li><strong>Promise-based</strong>, so it works directly with the <code class="i">async</code> / <code class="i">await</code> syntax from Step 1.</li>
+            <li><strong>Runs in the browser and in Node.</strong> The same API on both sides.</li>
+            <li><strong>It is not part of React.</strong> Nothing about it is React-specific — it's the standard way JavaScript applications talk to an API.</li>
+          </ul>
+          <pre class="sm"><code>import axios from "axios";
+
+const res = await axios.get("http://localhost:5000/api/professionals");
+
+console.log(res.data);      // the JSON the server sent back
+console.log(res.status);    // 200</code></pre>
+          <p class="note">The response object holds more than the data — <code class="i">res.data</code> is the body, <code class="i">res.status</code> is the HTTP status code.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The <code>res.data</code> vs <code>res</code> distinction catches people immediately. They will write <code>setProfessionals(res)</code> at least once and render an object.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="fetch vs axios">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>fetch vs axios</span></div>
+        <div class="body">
+          <h2>The same request, twice</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label">fetch — built into the browser</div>
+              <pre class="xs"><code>const res = await fetch(url);
+
+if (!res.ok) {
+  throw new Error(res.status);
+}
+
+const data = await res.json();</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">axios — one npm install</div>
+              <pre class="xs good"><code>const res = await axios.get(url);
+
+const data = res.data;</code></pre>
+            </div>
+          </div>
+          <ul class="pts">
+            <li><strong>It parses JSON for you.</strong> No <code class="i">res.json()</code>.</li>
+            <li><strong>It throws on 404 and 500.</strong> <code class="i">fetch</code> resolves happily on an error page.</li>
+            <li><strong>It sets JSON headers on POST</strong> automatically.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Reason two is the one that matters. With <code>fetch</code>, a 404 sails past your <code>catch</code>, then <code>res.json()</code> tries to parse an HTML error page and you get <code>Unexpected token '&lt;'</code> — an error that tells you nothing about what actually went wrong.</p>
+          <p>Say plainly: <code>fetch</code> isn't worse, it's lower level. Same idea, two extra lines.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="The methods">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>The methods</span></div>
+        <div class="body">
+          <h2>One method per CRUD operation</h2>
+          <pre class="sm"><code>// READ    — GET /api/professionals
+const res = await axios.get(API_URL);
+
+// CREATE  — POST /api/professionals        (data in the body)
+await axios.post(API_URL, values);
+
+// UPDATE  — PUT /api/professionals/:id     (id in the URL, data in the body)
+await axios.put(`${API_URL}/${id}`, values);
+
+// DELETE  — DELETE /api/professionals/:id  (id in the URL, no body)
+await axios.delete(`${API_URL}/${id}`);</code></pre>
+          <p class="note">The method name <strong>is</strong> the HTTP verb. These four lines are every request you will write today — the rest of the session is deciding where to put them.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Leave this slide up while they work. It's the reference sheet for both tasks, and it saves the same question being asked four times.</p>
+          <p>Point out the pattern: anything that targets one record puts the id in the URL; anything that sends data puts it in the second argument.</p>
+        </div>
+      </section>
+      <section class="slide" data-sec="Step 3">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 03</div>
+            <h1>API integration<br />Reading data</h1>
+            <p class="lede">Load the list from the API with useEffect and axios, and configure CORS on the server.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p><strong>The centrepiece.</strong> Type along together — this is not the step to leave them alone with. Three new things land here and the failure in the middle is deliberate.</p>
+          <p>If you only get through one step today, this is the one.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Empty the list">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Empty the list</span></div>
+        <div class="body">
+          <h2>Delete the seed array</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label">Before</div>
+              <pre class="xs"><code>const [professionals, setProfessionals] =
+  useState(SEED_PROFESSIONALS);</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">After</div>
+              <pre class="xs good"><code>const [professionals, setProfessionals] =
+  useState([]);</code></pre>
+            </div>
+          </div>
+          <p class="note">The page goes empty. <strong>Ask the room where the data should come from now</strong> before you answer it.</p>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Start the list as <code class="i">[]</code>, never <code class="i">null</code>. <code class="i">.map()</code> on <code class="i">null</code> is the classic first-render crash.</p>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Empty on purpose</span><span class="val">No data until we fetch it</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Deleting the seed array is a framing moment, not a chore. Let the empty page sit on screen for a few seconds.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="useEffect">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>useEffect</span></div>
+        <div class="body">
+          <h2>The useEffect hook</h2>
+          <ul class="pts">
+            <li><strong>A React hook for side effects</strong> — work that isn't part of building the JSX, like fetching data from an API.</li>
+            <li>The effect runs <strong>after</strong> React has rendered and put the screen up — never during.</li>
+            <li><strong>The second argument controls how often it runs.</strong> That's the next slide.</li>
+          </ul>
+          <pre class="sm"><code>useEffect(() =&gt; {
+  // the side effect — runs after the render
+}, [dependencies]);</code></pre>
+          <p class="note">Fetching is the textbook example: a request takes time, and React cannot pause a render to wait for it.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Frame it as "the escape hatch for anything that isn't rendering", not as "the data-fetching hook". They'll meet timers, subscriptions and event listeners in the same place later.</p>
+          <p>If someone asks why they can't just call axios in the component body: it would fire on every single render, and <code>setState</code> causes a render.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Dependencies">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Dependencies</span></div>
+        <div class="body">
+          <h2>The second argument decides how often it runs</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Written as</th><th>The effect runs</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code class="i">useEffect(fn)</code></td><td>After <strong>every</strong> render — almost never what you want</td></tr>
+                <tr><td><code class="i">useEffect(fn, [])</code></td><td><strong>Once</strong>, after the first render — what we need today</td></tr>
+                <tr><td><code class="i">useEffect(fn, [query])</code></td><td>After the first render, and again whenever <code class="i">query</code> changes</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">We want the list loaded once, when the page opens. That's the empty array.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The third row is worth naming even though we don't use it — it's how searching against the server would work, and it stops <code>[]</code> looking like magic punctuation.</p>
+          <p>The first row is the infinite loop: the effect sets state, state causes a render, the render runs the effect again.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Say this first">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Say this first</span></div>
+        <div class="body">
+          <h2>Three rules before writing an effect</h2>
+          <ul class="pts">
+            <li><strong>The effect callback cannot be <code class="i">async</code>.</strong> <code class="i">useEffect(async () =&gt; ...)</code> returns a promise where React expects a cleanup function. So we declare an inner function and call it.</li>
+            <li><strong><code class="i">[]</code> at the end means "once, on mount".</strong> Leave it off and setState triggers a render, which reruns the effect, which fetches again — forever.</li>
+            <li><strong>StrictMode runs effects twice in development.</strong> The Network tab will show <strong>two</strong> requests. Intentional, dev-only, gone in the production build.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Each of these costs ten minutes of confusion if you say it afterwards instead of now. The double-request one especially. If you don't pre-empt it, the first person to open the Network tab derails the room with "I think I wrote an infinite loop."</p>
+          <p>Optional 10-second demo: remove the <code>[]</code>, watch the request counter spin, put it back.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="The effect">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>The effect</span></div>
+        <div class="body">
+          <h2>Fetch on mount</h2>
+          <pre class="sm"><code>import { useState, useEffect } from "react";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api/professionals";
+
+async function loadProfessionals() {
+  const res = await axios.get(API_URL);
+  setProfessionals(res.data);
+}
+
+useEffect(() =&gt; {
+  loadProfessionals();
+}, []);</code></pre>
+          <p class="note"><code class="i">loadProfessionals</code> lives <strong>outside</strong> the effect on purpose — delete, add and edit all need to call it later.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>ESLint may warn that <code>loadProfessionals</code> is a missing dependency. Say it's intentional — we want this on mount only. <strong>Do not open <code>useCallback</code> today.</strong></p>
+          <p>Putting the function outside the effect now saves rewriting it twice in Steps 5 and 6.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="It fails">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>It fails</span></div>
+        <div class="body">
+          <h2>The request is blocked by the browser</h2>
+          <pre class="sm brk"><code>Access to XMLHttpRequest at 'http://localhost:5000/api/professionals'
+from origin 'http://localhost:5173' has been blocked by CORS policy:
+No 'Access-Control-Allow-Origin' header is present on the requested resource.</code></pre>
+          <ul class="pts">
+            <li>The Network tab shows the request <strong>was sent</strong>. The browser blocked the <strong>response</strong>.</li>
+            <li>The same URL works fine in a browser tab.</li>
+            <li>The backend logs show nothing wrong. <code class="i">npm test</code> still passes.</li>
+          </ul>
+          <p class="note">Same URL, different result. <strong>Why?</strong></p>
+        </div>
+        <div class="foot">
+          <div class="status brk"><span class="rail"></span><span class="txt"><span class="tag">Break it</span><span class="val">Blocked before any data arrives</span></span></div>
+        </div>
+        <div class="nt">
+          <p><strong>Let them sit with this for a full minute.</strong> Don't rescue them. This is the most valuable confusion of the session, and the error message deliberately doesn't say "add a header to your server".</p>
+          <p>Ask which side is broken. Most will say React. It isn't.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Same-origin">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Same-origin policy</span></div>
+        <div class="body">
+          <h2>A browser rule, not a server error</h2>
+          <ul class="pts">
+            <li>A page served from <code class="i">localhost:5173</code> may not read a response from <code class="i">localhost:5000</code>.</li>
+            <li>Different <strong>port</strong> = different <strong>origin</strong>. So does a different host or protocol.</li>
+            <li>The server must <strong>opt in</strong> by sending <code class="i">Access-Control-Allow-Origin</code>.</li>
+          </ul>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p>This is enforced by the <strong>browser</strong>, and only the browser. curl, Postman and the backend's own test suite don't care — which is exactly why <code class="i">npm test</code> passes while the app is broken.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The "why does Postman work?" question comes up every time. Answer it before it's asked — it's the cleanest way to make same-origin concrete.</p>
+          <p>One line on the purpose: it stops a random site reading your logged-in bank account's API responses.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="The fix">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>The fix</span></div>
+        <div class="body">
+          <h2>Two lines — in the backend</h2>
+          <pre class="sm good"><code>// server.js
+const cors = require("cors");
+
+app.use(cors());     // allow every origin — fine for learning</code></pre>
+          <p class="note">Restart the backend, refresh the browser. <strong>The list appears.</strong></p>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>In production you'd name the allowed site instead: <code class="i">app.use(cors({ origin: "https://yoursite.com" }))</code>. Allowing everything is a learning convenience.</p>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status fix"><span class="rail"></span><span class="txt"><span class="tag">Fixed</span><span class="val">The list loads from MongoDB</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Point out that the fix was in the <em>other project</em>. The bug appeared in React and was solved in Express — that's the lesson about knowing which side you're on.</p>
+          <p>Show the <code>Access-Control-Allow-Origin</code> header appearing in the Network tab's response headers.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="The order">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>What just happened</span></div>
+        <div class="body">
+          <h2>Effects run after paint, not during render</h2>
+          <div class="loop">
+            <ol class="pts">
+              <li>Component renders with <code class="i">professionals = []</code> — the page is empty.</li>
+              <li><strong>The effect runs, after that render is on screen.</strong></li>
+              <li>The request goes out. The user is looking at an empty list.</li>
+              <li>The response arrives → <code class="i">setProfessionals(res.data)</code>.</li>
+              <li>State changed, so React renders again — this time with data.</li>
+            </ol>
+          </div>
+          <p class="note">There is always a moment where the page is rendered and the data isn't there yet. <strong>That's what Step 4 is about.</strong></p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">The list loads from the database</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Walk this list out loud slowly. "Renders twice, and the first one is empty" is the mental model that makes loading states obvious instead of arbitrary.</p>
+          <p><strong>Checkpoint.</strong> Make sure everyone is here before moving on.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Unchanged">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>What didn't change</span></div>
+        <div class="body">
+          <h2>Nothing about identity had to change</h2>
+          <pre class="sm"><code>{visible.map((professional) =&gt; (
+  &lt;ProfessionalCard key={professional._id} ... /&gt;
+))}</code></pre>
+          <ul class="pts">
+            <li>The cards, the <code class="i">key</code>, edit and delete all already use <code class="i">_id</code>.</li>
+            <li>MongoDB documents arrive with <code class="i">_id</code>. They match.</li>
+            <li><strong>Zero changes needed.</strong></li>
+          </ul>
+          <p class="note">That was set up deliberately in advance. Had the app used <code class="i">id</code>, every key, edit and delete would have broken the moment real data arrived.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Small moment, worth ten seconds: the shape of your data and the shape your UI expects have to agree, and someone has to decide which one moves.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 04</div>
+            <h1>Loading<br />and error</h1>
+            <p class="lede">Handling requests that are slow, or that fail.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>First thing to cut if you're behind. The app works without it — it just lies to the user for a moment.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Four states">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Four states</span></div>
+        <div class="body">
+          <h2>Every request has four outcomes</h2>
+          <pre class="sm"><code>const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+
+async function loadProfessionals() {
+  try {
+    const res = await axios.get(API_URL);
+    setProfessionals(res.data);
+    setError(null);
+  } catch (err) {
+    setError("Could not load. Is the server running?");
+  } finally {
+    setLoading(false);        // runs either way
+  }
+}</code></pre>
+          <p class="note">axios <strong>throws</strong> on 404 and 500, so <code class="i">catch</code> actually catches. That's reason two from Step 2 paying off.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>This is where <code>finally</code> earns its place — loading must stop whether the request worked or not, and you'd otherwise write <code>setLoading(false)</code> twice.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Render them">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Render them</span></div>
+        <div class="body">
+          <h2>Loading · error · empty · success</h2>
+          <pre class="sm"><code>if (loading) return &lt;p&gt;Loading…&lt;/p&gt;;
+if (error) return &lt;p className="form-error"&gt;{error}&lt;/p&gt;;
+
+// the empty state you already wrote in Workshop 6 still handles the third
+// {visible.length === 0 ? &lt;p&gt;No professionals found&lt;/p&gt; : ...}</code></pre>
+          <div class="callout">
+            <div class="bar"></div>
+            <p><strong>Trigger it live:</strong> stop the backend, refresh the browser. The error state appears. Start it again, refresh, the list comes back.</p>
+          </div>
+          <p class="note">Students write only the success path. Making the failure happen on demand is the whole point of this step.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Honest UI when the server is down</span></span></div>
+        </div>
+        <div class="nt">
+          <p>If you have spare time: throttle the network in DevTools to see the loading state for more than a frame, and point <code>API_URL</code> at <code>/api/professionalz</code> for a 404.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 05</div>
+            <h1>DELETE</h1>
+            <p class="lede">Your turn. The simplest request — no body to send.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>First hands-on task. Chosen because it's small — one line out, three lines in — and the payoff is immediate and physical: refresh, still gone.</p>
+          <p>If you're setting Steps 5 and 6 as an assignment instead, stop here and hand out the task slides.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="Task">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Task</span></div>
+        <div class="body">
+          <div class="kicker">Your turn</div>
+          <h2>Persist deletes to the database</h2>
+          <ul class="pts">
+            <li>Deleting a professional currently only changes React state — refresh and they're back.</li>
+            <li>Make it delete <strong>from the database</strong>, and keep the list on screen up to date.</li>
+            <li>The endpoint is <code class="i">DELETE /api/professionals/:id</code></li>
+          </ul>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p><strong>Done looks like:</strong> delete someone, <strong>refresh the page, they're still gone.</strong></p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Say the clock out loud: "five minutes, then a hint." Then walk the room — what you see decides how much of the solution you actually read out.</p>
+          <p>Resist answering individual questions with the answer. Point at <code>handleDelete</code> and move on.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="Hint">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Hint</span></div>
+        <div class="body">
+          <div class="kicker">Hint</div>
+          <h2>Two questions to answer</h2>
+          <ul class="pts">
+            <li>Look at <code class="i">handleDelete</code> in <code class="i">App.jsx</code>. <strong>You don't need <code class="i">.filter()</code> any more</strong> — the server decides what the list contains now.</li>
+            <li>What does the function need to become before it's allowed to <code class="i">await</code> anything?</li>
+            <li>Once the server confirms the delete, <strong>how does the screen find out what the list looks like now?</strong></li>
+          </ul>
+          <p class="note">You already wrote the answer to the third question in Step 3.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>That last line is the whole hint — <code>loadProfessionals</code> already exists and is already outside the effect. Most of the room gets there from it.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="Solution">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Solution</span></div>
+        <div class="body">
+          <h2>Remove one line, add three</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Remove</div>
+              <pre class="xs brk"><code>setProfessionals((prev) =&gt;
+  prev.filter((p) =&gt; p._id !== id)
+);</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Add</div>
+              <pre class="xs good"><code>await axios.delete(`${API_URL}/${id}`);
+
+loadProfessionals();</code></pre>
+            </div>
+          </div>
+          <pre class="xs"><code>async function handleDelete(id) {          // ← now async
+  const professional = professionals.find((p) =&gt; p._id === id);
+  if (!window.confirm(`Delete ${professional.name}?`)) return;
+
+  await axios.delete(`${API_URL}/${id}`);
+
+  if (editingId === id) setEditingId(null);
+
+  loadProfessionals();                     // re-read the list
+}</code></pre>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Deletes survive a refresh</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Three things people forget: the <code>async</code> keyword, the backticks on the template string, and calling <code>loadProfessionals()</code> at all — the delete works but the screen doesn't change.</p>
+          <p><strong>Checkpoint.</strong> Anyone stuck checks out the branch now.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="The pattern">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>The pattern</span></div>
+        <div class="body">
+          <h2>Where does the screen get its new state?</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label good">Re-fetch — what we're doing</div>
+              <p class="note">Send the change, then ask the server for the list again. Simple, always correct, one extra request.</p>
+            </div>
+            <div>
+              <div class="pre-label">Update local state</div>
+              <p class="note">Change React's copy to match what you think the server did. Faster, no extra request, and wrong the moment your guess differs from reality.</p>
+            </div>
+          </div>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p><strong>Every mutation from here is the same two steps: send the change → re-read the list.</strong> POST and PUT are this exact shape.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Name option two as "optimistic updates" so they have the term, then move on. It's a Workshop 8+ topic and it opens a rollback discussion you don't have time for.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 06</div>
+            <h1>POST<br />and PUT</h1>
+            <p class="lede">Your turn. The same pattern, applied to the form.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>One task, not two — <code>handleSubmit</code> already branches on <code>editingId</code>, so splitting them would teach the same lesson twice.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Task">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Task</span></div>
+        <div class="body">
+          <div class="kicker">Your turn</div>
+          <h2>Make the form save to the database</h2>
+          <ul class="pts">
+            <li>Adding a professional should <strong>POST</strong>. Editing one should <strong>PUT</strong>.</li>
+            <li>The list must show the change <strong>without a manual refresh</strong>.</li>
+            <li><code class="i">POST /api/professionals</code> — the whole professional in the body</li>
+            <li><code class="i">PUT /api/professionals/:id</code> — same, plus the id in the URL</li>
+          </ul>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p><strong>Done looks like:</strong> add someone, refresh, they're still there. Edit someone, refresh, the edit stuck.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Eight minutes. This is longer than Step 5's task because there are two branches — but it should feel easier, because they now have the pattern.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Hint">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Hint</span></div>
+        <div class="body">
+          <div class="kicker">Hint</div>
+          <h2>Keep the <code class="i">if</code>. Replace what's inside it.</h2>
+          <ul class="pts">
+            <li><code class="i">handleSubmit</code> already knows which mode it's in. That part doesn't change.</li>
+            <li><strong>One line in the "add" branch is now obsolete.</strong> Something in there is inventing an id — <strong>who generates ids now?</strong></li>
+            <li>Finish the function the same way you finished <code class="i">handleDelete</code>.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The <code>crypto.randomUUID()</code> nudge is the one worth waiting for. Students will happily leave it in and end up with a client-generated id being ignored by MongoDB — which works, confusingly, and teaches nothing.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Solution">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Solution</span></div>
+        <div class="body">
+          <h2>Both state updates go. Two requests replace them.</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Remove — both branches</div>
+              <pre class="xs brk"><code>setProfessionals((prev) =&gt;
+  prev.map((p) =&gt;
+    p._id === editingId ? { ...p, ...values } : p
+  )
+);
+
+setProfessionals((prev) =&gt; [
+  ...prev,
+  { ...values, _id: crypto.randomUUID() },
+]);</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Add</div>
+              <pre class="xs good"><code>async function handleSubmit(values) {
+  if (editingId) {
+    await axios.put(
+      `${API_URL}/${editingId}`, values
+    );
+  } else {
+    await axios.post(API_URL, values);
+  }
+
+  setEditingId(null);
+  loadProfessionals();
+}</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Full CRUD, persisted</span></span></div>
+        </div>
+        <div class="nt">
+          <p><strong>Checkpoint.</strong> This is the finished app — make sure everyone lands here before the recap.</p>
+          <p>If someone's POST returns 500, it's a schema rule: check the backend terminal, not the browser.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="What left">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>What left the file</span></div>
+        <div class="body">
+          <h2>Three things to notice</h2>
+          <ul class="pts">
+            <li><strong><code class="i">crypto.randomUUID()</code> is gone.</strong> MongoDB generates <code class="i">_id</code> now. Ids were never really ours to invent.</li>
+            <li><strong><code class="i">.map()</code> and <code class="i">.filter()</code> have both left <code class="i">App</code>.</strong> Ask what replaced the entire immutability toolkit you spent Workshop 6 learning.</li>
+            <li><strong><code class="i">key={editingId ?? "new"}</code> is untouched.</strong> The remount trick had nothing to do with where the data lived.</li>
+          </ul>
+          <p class="note">The answer to the second one: <strong>the server, plus a re-fetch.</strong> Immutability still matters — it just moved to a place you can't see from here.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Don't skip the second bullet. Watching a technique they just learned become unnecessary is unsettling unless you explain why it still mattered.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 7">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 07</div>
+            <h1>Recap</h1>
+            <p class="lede">The request cycle, and what this app still lacks.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Five minutes. Put the loop on the board and leave it there.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 7" data-step="The loop">
+        <div class="top"><span class="step">Step 7</span><span class="sep">/</span><span>The loop</span></div>
+        <div class="body">
+          <h2>The whole session in two lines</h2>
+          <div class="loop">
+            <p class="big">render → effect → request → response → setState → re-render</p>
+          </div>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p><strong>Every change you make is: send the change → re-read the list.</strong> GET, DELETE, POST and PUT are all that same sentence.</p>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Full CRUD against MongoDB</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Ask someone to say the loop back to you. If they can, the session worked.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 7" data-step="Still missing">
+        <div class="top"><span class="step">Step 7</span><span class="sep">/</span><span>Still missing</span></div>
+        <div class="body">
+          <h2>Known limitations</h2>
+          <ul class="pts">
+            <li><strong>No loading state on the buttons.</strong> Delete something on a slow connection and nothing happens for a second.</li>
+            <li><strong>Search still filters locally.</strong> Asking the server on every keystroke would be wasteful — that's debouncing.</li>
+            <li><strong>The API has no lock on it.</strong> Anyone who knows the URL can delete everything.</li>
+          </ul>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>That last one is next workshop. The backend already issues a JWT at login — nothing is checking it yet.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Ending on the limitations rather than a victory lap sets up the next session and stops them thinking this is production-ready.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Reference" data-step="Errors">
+        <div class="top"><span class="step">Reference</span><span class="sep">/</span><span>When it breaks</span></div>
+        <div class="body">
+          <h2>Troubleshooting reference</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Symptom</th><th>Cause</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>CORS error in the console</td><td><code class="i">cors()</code> missing, or backend not running</td></tr>
+                <tr><td><code class="i">Network Error</code> from axios</td><td>Backend not running, or wrong port</td></tr>
+                <tr><td>Two requests per page load</td><td>StrictMode double-invoke — dev only, intentional</td></tr>
+                <tr><td>Requests forever, page frozen</td><td>Missing <code class="i">[]</code> on <code class="i">useEffect</code></td></tr>
+                <tr><td><code class="i">.map is not a function</code></td><td>Initial state isn't <code class="i">[]</code></td></tr>
+                <tr><td>Saves, but the screen doesn't update</td><td>Forgot to re-fetch after the mutation</td></tr>
+                <tr><td><code class="i">useEffect(async () =&gt; ...)</code> warning</td><td>The effect callback can't be <code class="i">async</code></td></tr>
+                <tr><td>Changes vanish on refresh</td><td>Still calling <code class="i">setProfessionals</code> instead of the API</td></tr>
+                <tr><td>500 when submitting the form</td><td>A schema rule broken — check the backend terminal</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Leave this on screen during the task steps. It answers most questions before they're asked.</p>
+        </div>
+      </section>
+
+      
+
+
+    </div>
+  </div>
+
+  <div id="notes">
+    <div class="nh">Presenter notes — press N to hide</div>
+    <div class="nb" id="notesBody"></div>
+  </div>
+  <div id="bar"><i></i></div>
+  <div id="hud">
+    <button id="btnPrev" type="button" aria-label="Previous slide">&#8592;</button>
+    <button id="btnNext" type="button" aria-label="Next slide">&#8594;</button>
+    <span id="counter">1 / 1</span>
+    <button id="btnNotes" type="button">N</button>
+    <button id="btnJump" type="button">O</button>
+    <button id="btnTheme" type="button">&#9686;</button>
+    <button id="btnFull" type="button">F</button>
+  </div>
+  <div id="jump" aria-label="Slide index"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* ---------- syntax highlighting ----------
+         Runs over textContent (already-decoded source), escaping as it emits,
+         so entity handling happens exactly once. */
+      function esc(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      var RE = new RegExp([
+        "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)",                                   // 1 comment
+        "(`(?:\\\\[\\s\\S]|[^`\\\\])*`|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|'(?:\\\\[\\s\\S]|[^'\\\\])*')", // 2 string
+        "(<\\/?[A-Za-z][\\w.]*)",                                                   // 3 jsx tag
+        "\\b(const|let|var|function|return|if|else|for|of|in|while|new|async|await|try|catch|finally|throw|import|export|default|from|typeof|null|undefined|true|false)\\b", // 4 keyword
+        "\\b(\\d+(?:\\.\\d+)?)\\b",                                                 // 5 number
+        "\\b([A-Za-z_$][\\w$]*)(?=\\s*\\()"                                         // 6 call
+      ].join("|"), "g");
+
+      var CLS = { 1: "t-com", 2: "t-str", 3: "t-tag", 4: "t-kw", 5: "t-num", 6: "t-fn" };
+
+      function highlight(src) {
+        var out = "", last = 0, m;
+        RE.lastIndex = 0;
+        while ((m = RE.exec(src)) !== null) {
+          if (m[0] === "") { RE.lastIndex++; continue; }
+          out += esc(src.slice(last, m.index));
+          var cls = null;
+          for (var g = 1; g <= 6; g++) { if (m[g] !== undefined) { cls = CLS[g]; break; } }
+          out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+          last = m.index + m[0].length;
+        }
+        return out + esc(src.slice(last));
+      }
+
+      var blocks = document.querySelectorAll("pre code");
+      for (var i = 0; i < blocks.length; i++) {
+        blocks[i].innerHTML = highlight(blocks[i].textContent);
+      }
+
+      /* ---------- deck ---------- */
+      var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+      var stage = document.getElementById("stage");
+      var viewport = document.getElementById("viewport");
+      var notes = document.getElementById("notes");
+      var notesBody = document.getElementById("notesBody");
+      var jump = document.getElementById("jump");
+      var counter = document.getElementById("counter");
+      var barFill = document.querySelector("#bar > i");
+      var cur = 0;
+
+      function fit() {
+        var pad = 24;
+        var chrome = notes.classList.contains("on") ? notes.offsetHeight : 0;
+        var w = window.innerWidth - pad * 2;
+        var h = window.innerHeight - chrome - 46;
+        var s = Math.min(w / 1280, h / 720);
+        stage.style.transform = "scale(" + s + ")";
+        viewport.style.paddingBottom = (chrome + 20) + "px";
+      }
+
+      function show(n) {
+        cur = Math.max(0, Math.min(slides.length - 1, n));
+        for (var i = 0; i < slides.length; i++) {
+          slides[i].classList.toggle("on", i === cur);
+        }
+        counter.textContent = (cur + 1) + " / " + slides.length;
+        barFill.style.width = ((cur + 1) / slides.length * 100) + "%";
+        var nt = slides[cur].querySelector(".nt");
+        notesBody.innerHTML = nt ? nt.innerHTML : "<p><em>No notes for this slide.</em></p>";
+        var rows = jump.querySelectorAll(".jrow");
+        for (var j = 0; j < rows.length; j++) rows[j].classList.toggle("cur", j === cur);
+        try { location.hash = String(cur + 1); } catch (e) { }
+      }
+
+      /* jump menu, grouped by section */
+      (function buildJump() {
+        var html = "", lastSec = null, open = false;
+        slides.forEach(function (s, i) {
+          var sec = s.getAttribute("data-sec") || "—";
+          var h = s.querySelector("h1, h2, h3");
+          var label = s.getAttribute("data-step") || (h ? h.textContent.trim() : "Slide " + (i + 1));
+          if (label.length > 52) label = label.slice(0, 50) + "…";
+          if (sec !== lastSec) {
+            if (open) html += "</div>";
+            html += "<h4>" + esc(sec) + '</h4><div class="jgrid">';
+            lastSec = sec; open = true;
+          }
+          html += '<button type="button" class="jrow" data-i="' + i + '">' +
+            '<span class="jn">' + String(i + 1).padStart(2, "0") + "</span>" +
+            "<span>" + esc(label) + "</span></button>";
+        });
+        if (open) html += "</div>";
+        jump.innerHTML = html;
+        jump.addEventListener("click", function (e) {
+          var btn = e.target.closest(".jrow");
+          if (!btn) return;
+          jump.classList.remove("on");
+          show(parseInt(btn.getAttribute("data-i"), 10));
+        });
+      })();
+
+      function toggleNotes() { notes.classList.toggle("on"); fit(); }
+      function toggleJump() { jump.classList.toggle("on"); }
+      function toggleTheme() {
+        var root = document.documentElement;
+        var now = root.getAttribute("data-theme");
+        if (!now) {
+          now = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        root.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+      }
+      function toggleFull() {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var k = e.key;
+        if (jump.classList.contains("on") && k === "Escape") { jump.classList.remove("on"); return; }
+        if (k === "ArrowRight" || k === "PageDown" || k === " " || k === "j") { e.preventDefault(); show(cur + 1); }
+        else if (k === "ArrowLeft" || k === "PageUp" || k === "k") { e.preventDefault(); show(cur - 1); }
+        else if (k === "Home") { e.preventDefault(); show(0); }
+        else if (k === "End") { e.preventDefault(); show(slides.length - 1); }
+        else if (k === "n" || k === "N") { toggleNotes(); }
+        else if (k === "o" || k === "O") { toggleJump(); }
+        else if (k === "f" || k === "F") { toggleFull(); }
+        else if (k === "t" || k === "T") { toggleTheme(); }
+      });
+
+      document.getElementById("btnPrev").addEventListener("click", function () { show(cur - 1); });
+      document.getElementById("btnNext").addEventListener("click", function () { show(cur + 1); });
+      document.getElementById("btnNotes").addEventListener("click", toggleNotes);
+      document.getElementById("btnJump").addEventListener("click", toggleJump);
+      document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+      document.getElementById("btnFull").addEventListener("click", toggleFull);
+
+      window.addEventListener("resize", fit);
+      document.addEventListener("fullscreenchange", fit);
+
+      var start = parseInt((location.hash || "").replace("#", ""), 10);
+      show(isNaN(start) ? 0 : start - 1);
+      fit();
+    })();
+  </script>
+</body>
+
+</html>
