@@ -1,0 +1,2081 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workshop 8 — Routing, Context and Auth Pages</title>
+  <style>
+    /* ============================================================
+   React Workshop — Week 6
+   Design: the plan's own arc is break → fix → checkpoint.
+   Two colours carry it. Everything else stays quiet.
+   Break  = hatched rail + the word BREAK IT
+   Repair = dotted rail + the word FIX IT
+   Green  = solid rail + APP WORKS NOW
+   (form + word, never hue alone)
+   ============================================================ */
+
+    :root {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+        "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #EFF2F5;
+        --bg-2: #FBFCFD;
+        --bg-3: #E4E9EE;
+        --ink: #131A21;
+        --ink-2: #56677A;
+        --ink-3: #7B8B9C;
+        --rule: #D0D9E1;
+        --break: #C7362A;
+        --ok: #1B7A50;
+
+        --t-com: #78889B;
+        --t-kw: #1B5FBF;
+        --t-str: #96551A;
+        --t-tag: #0B6E60;
+        --t-num: #6B3FA0;
+        --t-fn: #8A6A08;
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg: #EFF2F5;
+      --bg-2: #FBFCFD;
+      --bg-3: #E4E9EE;
+      --ink: #131A21;
+      --ink-2: #56677A;
+      --ink-3: #7B8B9C;
+      --rule: #D0D9E1;
+      --break: #C7362A;
+      --ok: #1B7A50;
+      --t-com: #78889B;
+      --t-kw: #1B5FBF;
+      --t-str: #96551A;
+      --t-tag: #0B6E60;
+      --t-num: #6B3FA0;
+      --t-fn: #8A6A08;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0F141A;
+      --bg-2: #161E26;
+      --bg-3: #1B242E;
+      --ink: #E4EAF0;
+      --ink-2: #94A3B4;
+      --ink-3: #67788A;
+      --rule: #232E3A;
+      --break: #FF6B5E;
+      --ok: #45C08A;
+      --t-com: #5F7185;
+      --t-kw: #8AB4F8;
+      --t-str: #E0A87A;
+      --t-tag: #7FD1C0;
+      --t-num: #B9A5E3;
+      --t-fn: #F0D48A;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- stage ---------- */
+    #viewport {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #stage {
+      width: 1280px;
+      height: 720px;
+      position: relative;
+      transform-origin: center center;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      grid-template-rows: auto 1fr auto;
+      padding: 0;
+    }
+
+    .slide.on {
+      display: grid;
+    }
+
+    /* ---------- chrome ---------- */
+    .top {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 22px 56px 0 56px;
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .top .step {
+      color: var(--ink-2);
+    }
+
+    .top .sep {
+      color: var(--rule);
+    }
+
+    .top .time {
+      margin-left: auto;
+      letter-spacing: .06em;
+    }
+
+    .body {
+      padding: 24px 56px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .foot {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 56px 22px 56px;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      min-height: 20px;
+    }
+
+    /* status bar — form-encoded, not hue-encoded */
+    .status {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .status .rail {
+      width: 8px;
+      border-radius: 1px;
+    }
+
+    .status .txt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status .tag {
+      font-weight: 700;
+    }
+
+    .status .val {
+      color: var(--ink-2);
+      text-transform: none;
+      letter-spacing: .02em;
+      font-size: 14px;
+    }
+
+    .status.ok .rail {
+      background: var(--ok);
+    }
+
+    .status.ok .tag {
+      color: var(--ok);
+    }
+
+    .status.brk .rail {
+      background: repeating-linear-gradient(45deg, var(--break) 0 4px, transparent 4px 8px);
+    }
+
+    .status.brk .tag {
+      color: var(--break);
+    }
+
+    .status.fix .rail {
+      background: repeating-linear-gradient(to bottom, var(--ok) 0 3px, transparent 3px 7px);
+    }
+
+    .status.fix .tag {
+      color: var(--ok);
+    }
+
+    /* ---------- type ---------- */
+    h1.big {
+      font-family: var(--mono);
+      font-size: 68px;
+      line-height: 1.04;
+      letter-spacing: -.03em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 42px;
+      line-height: 1.12;
+      letter-spacing: -.025em;
+      margin: 0;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      margin: 0;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    p.lede {
+      font-size: 25px;
+      line-height: 1.45;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 62ch;
+    }
+
+    p.note {
+      font-size: 20px;
+      line-height: 1.5;
+      margin: 0;
+      color: var(--ink-2);
+      max-width: 68ch;
+    }
+
+    ul.pts {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    ul.pts>li {
+      font-size: 24px;
+      line-height: 1.4;
+      color: var(--ink);
+      padding-left: 26px;
+      position: relative;
+      max-width: 66ch;
+    }
+
+    ul.pts>li::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: .62em;
+      width: 7px;
+      height: 2px;
+      background: var(--ink-3);
+    }
+
+    ul.pts>li .sub {
+      display: block;
+      font-size: 19px;
+      color: var(--ink-2);
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+
+    ul.tight>li {
+      font-size: 21px;
+    }
+
+    code.i {
+      font-family: var(--mono);
+      font-size: .93em;
+      background: var(--bg-3);
+      color: var(--ink);
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    em {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+
+    /* ---------- code blocks ---------- */
+    pre {
+      margin: 0;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--rule);
+      border-radius: 4px;
+      padding: 20px 24px;
+      overflow-x: auto;
+    }
+
+    pre code {
+      font-family: var(--mono);
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--ink);
+      white-space: pre;
+      display: block;
+    }
+
+    pre.sm code {
+      font-size: 18.5px;
+      line-height: 1.5;
+    }
+
+    pre.xs code {
+      font-size: 16.5px;
+      line-height: 1.45;
+    }
+
+    pre.brk {
+      border-left-color: var(--break);
+    }
+
+    pre.good {
+      border-left-color: var(--ok);
+    }
+
+    .t-com {
+      color: var(--t-com);
+      font-style: italic;
+    }
+
+    .t-kw {
+      color: var(--t-kw);
+    }
+
+    .t-str {
+      color: var(--t-str);
+    }
+
+    .t-tag {
+      color: var(--t-tag);
+    }
+
+    .t-num {
+      color: var(--t-num);
+    }
+
+    .t-fn {
+      color: var(--t-fn);
+    }
+
+    .pre-label {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 8px;
+    }
+
+    .pre-label.bad {
+      color: var(--break);
+    }
+
+    .pre-label.good {
+      color: var(--ok);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .cols.wide {
+      gap: 30px;
+    }
+
+    /* ---------- section cards ---------- */
+    .section-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .section-num {
+      font-family: var(--mono);
+      font-size: 15px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .section-card h1 {
+      font-size: 62px;
+    }
+
+    .star {
+      color: var(--ok);
+    }
+
+    /* ---------- callouts ---------- */
+    .callout {
+      display: grid;
+      grid-template-columns: 8px 1fr;
+      gap: 22px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 26px 28px 26px 0;
+      align-items: stretch;
+    }
+
+    .callout .bar {
+      background: repeating-linear-gradient(45deg, var(--break) 0 5px, transparent 5px 10px);
+      border-radius: 2px;
+    }
+
+    .callout .inner {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .callout .kicker {
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--break);
+      font-weight: 700;
+    }
+
+    .callout p {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.45;
+      color: var(--ink);
+      max-width: 64ch;
+    }
+
+    .callout.info .bar {
+      background: var(--ink-3);
+    }
+
+    .callout.info .kicker {
+      color: var(--ink-2);
+    }
+
+    /* ---------- the loop diagram ---------- */
+    .loop {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .loop .node {
+      font-family: var(--mono);
+      font-size: 19px;
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 12px 16px;
+      color: var(--ink);
+    }
+
+    .loop .arrow {
+      color: var(--ink-3);
+      font-family: var(--mono);
+      font-size: 19px;
+    }
+
+    .loop .node.hi {
+      border-color: var(--ok);
+      color: var(--ok);
+    }
+
+    /* ---------- table ---------- */
+    .tbl-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 500px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 17.5px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding: 0 14px 10px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    tbody td {
+      padding: 11px 14px 11px 0;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+      line-height: 1.35;
+    }
+
+    tbody td:first-child {
+      color: var(--ink);
+      width: 47%;
+    }
+
+    tbody td:last-child {
+      color: var(--ink-2);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ---------- title slide ---------- */
+    .title-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      gap: 26px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 16px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+
+    .title-meta {
+      display: flex;
+      gap: 34px;
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--ink-2);
+      letter-spacing: .04em;
+      flex-wrap: wrap;
+    }
+
+    .title-meta span {
+      display: flex;
+      gap: 9px;
+      align-items: baseline;
+    }
+
+    .title-meta b {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 34px;
+    }
+
+    .roadmap .rm {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 14px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 18.5px;
+    }
+
+    .roadmap .rm .n {
+      font-family: var(--mono);
+      color: var(--ink-3);
+      font-size: 15px;
+    }
+
+    .roadmap .rm .t {
+      color: var(--ink);
+    }
+
+    .roadmap .rm .d {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink-3);
+    }
+
+    .roadmap .hd {
+      grid-column: 1 / -1;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-top: 6px;
+    }
+
+    /* ---------- app chrome outside stage ---------- */
+    #bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: var(--rule);
+      z-index: 40;
+    }
+
+    #bar>i {
+      display: block;
+      height: 100%;
+      background: var(--ink-2);
+      width: 0;
+      transition: width .18s ease;
+    }
+
+    #hud {
+      position: fixed;
+      right: 16px;
+      bottom: 14px;
+      z-index: 41;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink-3);
+    }
+
+    #hud button {
+      font: inherit;
+      color: var(--ink-2);
+      background: var(--bg-2);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 5px 10px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    #hud button:hover {
+      color: var(--ink);
+      border-color: var(--ink-3);
+    }
+
+    #hud button:focus-visible,
+    #jump:focus-visible,
+    .jrow:focus-visible {
+      outline: 2px solid var(--ok);
+      outline-offset: 2px;
+    }
+
+    #counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- notes ---------- */
+    #notes {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 3px;
+      z-index: 39;
+      background: var(--bg-2);
+      border-top: 1px solid var(--rule);
+      padding: 16px 22px 18px;
+      max-height: 34vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #notes.on {
+      display: block;
+    }
+
+    #notes .nh {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 9px;
+    }
+
+    #notes .nb {
+      font-size: 15.5px;
+      line-height: 1.55;
+      color: var(--ink);
+      max-width: 100ch;
+    }
+
+    #notes .nb p {
+      margin: 0 0 8px;
+    }
+
+    #notes .nb p:last-child {
+      margin-bottom: 0;
+    }
+
+    #notes .nb em {
+      color: var(--ink-2);
+    }
+
+    #notes .nb code {
+      font-family: var(--mono);
+      font-size: .92em;
+      background: var(--bg-3);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .nt {
+      display: none;
+    }
+
+    /* ---------- jump menu ---------- */
+    #jump {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: var(--bg);
+      display: none;
+      padding: 30px 40px;
+      overflow-y: auto;
+    }
+
+    #jump.on {
+      display: block;
+    }
+
+    #jump h4 {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 22px 0 8px;
+    }
+
+    #jump h4:first-child {
+      margin-top: 0;
+    }
+
+    .jgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 4px 26px;
+    }
+
+    .jrow {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: baseline;
+      padding: 6px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      text-align: left;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      width: 100%;
+    }
+
+    .jrow:hover {
+      background: var(--bg-2);
+    }
+
+    .jrow .jn {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .jrow.cur {
+      background: var(--bg-3);
+    }
+
+    .jrow.cur .jn {
+      color: var(--ok);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="viewport">
+    <div id="stage">
+
+      <section class="slide" data-sec="Front">
+        <div class="top"></div>
+        <div class="body">
+          <div class="title-wrap">
+            <div class="eyebrow">React Workshop · Level 4</div>
+            <h1 class="big">Workshop 8<br />Routing, Context<br />and Auth Pages</h1>
+            <p class="lede">One app, several screens. A logged-in user the whole app can see. Login and register wired to the API.</p>
+            <div class="title-meta">
+              <span>8 steps</span>
+              <span>3 hands-on tasks</span>
+              <span><b>The app runs at the end of every step.</b></span>
+            </div>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Open with the Workshop 7 app running and the backend running beside it. The list should be loading from MongoDB before you say a word.</p>
+          <p>Set the frame: <em>Workshop 7 gave the app a database. Today it gets a shape — more than one screen, and a idea of who is using it.</em></p>
+          <p>Navigation: <code>&rarr;</code> next, <code>&larr;</code> back, <code>N</code> notes, <code>O</code> jump menu, <code>F</code> fullscreen.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 0">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 00</div>
+            <h1>Getting started</h1>
+            <p class="lede">Three new ideas today, and they build on each other in order.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Check the pre-work install: <code>npm install react-router</code> in the frontend. Nothing new is needed in the backend today.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 0" data-step="Today">
+        <div class="top"><span class="step">Step 0</span><span class="sep">/</span><span>Today</span></div>
+        <div class="body">
+          <h2>Today's three concepts</h2>
+          <ul class="pts">
+            <li><strong>Routing.</strong> One React app, several screens, chosen by the URL. The app stops being a single page.</li>
+            <li><strong>Context.</strong> A value any component can read without being handed it as a prop. We use it for one thing: who is logged in.</li>
+            <li><strong>Auth pages.</strong> Login and register forms talking to the endpoints the backend has had since Workshop 5.</li>
+          </ul>
+          <p class="note">The order isn't arbitrary. You need somewhere to <em>put</em> a login page before you can build one, and somewhere to <em>keep</em> the token before the login page can finish its job.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Say plainly that this is more new material than Workshop 7 had. Routing and context are both small ideas with a lot of unfamiliar vocabulary; the vocabulary is the hard part, not the concept.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 0" data-step="Setup">
+        <div class="top"><span class="step">Step 0</span><span class="sep">/</span><span>Setup</span></div>
+        <div class="body">
+          <h2>Running both servers</h2>
+          <pre class="sm"><code># Terminal 1 — the API (unchanged today)
+cd professionals-backend
+npm run dev                 # http://localhost:5000
+
+# Terminal 2 — the React app
+cd professionals-frontend
+npm install react-router    # the one new dependency
+npm run dev                 # http://localhost:5173</code></pre>
+          <p class="note">The backend is <strong>finished</strong> for today's purposes: it already has <code class="i">POST /api/register</code> and <code class="i">POST /api/login</code>, and CORS is already on from Workshop 7. Everything we write today is frontend.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Workshop 7's finished CRUD</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Anyone who didn't finish Workshop 7 checks out the <code>workshop-7-complete</code> branch now. Do not let someone start today on a half-finished Workshop 7.</p>
+          <p>Prove the auth endpoints exist before you rely on them — a quick <code>curl</code> or Postman POST to <code>/api/register</code> in front of the room takes thirty seconds.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 1">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 01</div>
+            <h1>Why routing</h1>
+            <p class="lede">The problem with an app that only has one screen.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Six minutes. Motivation only — no code on this step.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 1" data-step="Single screen">
+        <div class="top"><span class="step">Step 1</span><span class="sep">/</span><span>Single screen</span></div>
+        <div class="body">
+          <h2>The limits of a single screen</h2>
+          <p class="note">Our app always shows the same screen. To add a login page with what you know today, you'd need a piece of state and a conditional:</p>
+          <pre class="sm"><code>const [showLogin, setShowLogin] = useState(false);
+
+return showLogin ? &lt;LoginForm /&gt; : &lt;ProfessionalsList /&gt;;</code></pre>
+          <ul class="pts">
+            <li>That works for <strong>two</strong> screens. Now add a register page: you need a second flag, and both can be true at the same time. Which screen shows?</li>
+            <li>The address bar never changes either. <strong>Back does nothing, refreshing sends you to the start, and you can't send anyone a link to a screen.</strong></li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Ask the room how they'd add a login screen with what they know today. Someone will say a boolean and a ternary. That's the right answer with the tools they have, and it's exactly the thing that doesn't scale.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 1" data-step="The idea">
+        <div class="top"><span class="step">Step 1</span><span class="sep">/</span><span>The idea</span></div>
+        <div class="body">
+          <h2>One app, several URLs</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>URL</th><th>What renders</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code class="i">/</code></td><td>The professionals list — Workshop 7's screen</td></tr>
+                <tr><td><code class="i">/login</code></td><td>The login form</td></tr>
+                <tr><td><code class="i">/register</code></td><td>The register form</td></tr>
+                <tr><td><code class="i">anything else</code></td><td>A "page not found" screen</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">Nothing here is a new page load. It's still <strong>one</strong> React app with one <code class="i">index.html</code> — a router just picks which component to render for the current address.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The phrase worth landing: <em>the URL is a piece of state that lives in the address bar instead of in useState</em>. Back, forward, refresh and bookmarks are all free once that's true.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 02</div>
+            <h1>React Router</h1>
+            <p class="lede">Three components and one hook. Type along.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Around twenty minutes, led. There's a file move in the middle of this step and file moves break people — walk the room.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="Install">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>Install</span></div>
+        <div class="body">
+          <h2>Installing React Router</h2>
+          <pre class="sm good"><code>npm install react-router</code></pre>
+          <p class="note">Everything we use today comes from that one package:</p>
+          <pre class="sm good"><code>import { BrowserRouter, Routes, Route, Link, useNavigate } from "react-router";</code></pre>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Older tutorials import from <code class="i">react-router-dom</code>. That package has been merged into <code class="i">react-router</code> — use the import above, or you'll get <code class="i">Failed to resolve import</code>.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Say the <code>react-router-dom</code> line out loud even though it's only a callout. It is the single most likely thing to eat ten minutes of the session, and it is not their mistake — most search results are genuinely out of date.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="The pieces">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>The pieces</span></div>
+        <div class="body">
+          <h2>The core API</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>What it does</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code class="i">&lt;BrowserRouter&gt;</code></td><td>Watches the address bar. Wraps the whole app, once, in <code class="i">main.jsx</code>.</td></tr>
+                <tr><td><code class="i">&lt;Routes&gt;</code></td><td>Looks at the current URL and renders the <strong>one</strong> <code class="i">&lt;Route&gt;</code> inside it that matches.</td></tr>
+                <tr><td><code class="i">&lt;Route&gt;</code></td><td>One pairing: <code class="i">path</code> (a URL) and <code class="i">element</code> (the JSX to show).</td></tr>
+                <tr><td><code class="i">&lt;Link&gt;</code></td><td>Navigates on click, without reloading the page.</td></tr>
+                <tr><td><code class="i">useNavigate()</code></td><td>Navigates from code — after a successful login, say.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">That's the whole API surface for today. React Router has a great deal more; none of it is needed yet.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Leave this slide up while they type the next three. It's the reference they'll keep glancing back at.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="main.jsx">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>main.jsx</span></div>
+        <div class="body">
+          <h2>Setting up BrowserRouter</h2>
+          <pre class="sm good"><code>import { BrowserRouter } from "react-router";
+
+createRoot(document.getElementById("root")).render(
+  &lt;StrictMode&gt;
+    &lt;BrowserRouter&gt;
+      &lt;App /&gt;
+    &lt;/BrowserRouter&gt;
+  &lt;/StrictMode&gt;,
+);</code></pre>
+          <p class="note">Wrap the whole app once, here. Nothing else in the project imports <code class="i">BrowserRouter</code> again.</p>
+          <div class="callout">
+            <div class="bar"></div>
+            <p><code class="i">&lt;Link&gt;</code>, <code class="i">useNavigate()</code>, <code class="i">&lt;Routes&gt;</code> and <code class="i">&lt;Route&gt;</code> <strong>only work inside <code class="i">&lt;BrowserRouter&gt;</code></strong>. "Inside" means anywhere below it in the tree, not just a direct child — <code class="i">App</code> is inside it, so every page and component <code class="i">App</code> renders is inside it too.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>That rule is why this wrapper goes at the very top and never appears again. Everything they write today is somewhere under <code>App</code>, so everything they write today is covered.</p>
+          <p>If someone does break it, React Router throws <code>… may be used only in the context of a &lt;Router&gt; component</code>. It's in the error table at the end — no need to dwell on it here.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="Move the page">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>Move the page</span></div>
+        <div class="body">
+          <h2>Project structure</h2>
+          <pre class="sm"><code>src/
+  App.jsx                      &larr; becomes the route table
+  main.jsx
+  api.js                       ✓ ready
+  pages/
+    ProfessionalsPage.jsx      &larr; CREATE IT: Workshop 7's App, moved here
+    LoginPage.jsx              &middot; placeholder, Step 4
+    RegisterPage.jsx           &middot; placeholder, Step 5
+    NotFoundPage.jsx           ✓ ready
+  components/
+    NavBar.jsx                 &middot; placeholder, Step 2
+    ProtectedRoute.jsx         &middot; placeholder, Step 6
+    ProfessionalCard.jsx       ✓ untouched all day
+    ProfessionalForm.jsx       ✓ untouched all day</code></pre>
+          <p class="note">The folders and placeholders are already in your project — <strong>the one file you create today is <code class="i">ProfessionalsPage.jsx</code></strong>. Cut your whole <code class="i">App.jsx</code> into it, then change four things: rename <code class="i">App</code> to <code class="i">ProfessionalsPage</code> (the function and the export), fix the two <code class="i">../components/</code> import paths, and leave <code class="i">import "./App.css"</code> behind in <code class="i">App.jsx</code>. <strong>No logic changes at all.</strong></p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Do this live and slowly. Renaming a component and re-pointing relative imports is trivial for you and genuinely disorienting the first time.</p>
+          <p>The point to make: a "page" is not a special kind of React thing. It's an ordinary component that happens to be what a route renders — which is why moving it changes nothing but the import paths.</p>
+          <p>Open the placeholder files in front of them for ten seconds. Each one says which step fills it in, so nobody has to invent a filename or a folder today.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="The route table">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>The route table</span></div>
+        <div class="body">
+          <h2>Defining the routes</h2>
+          <pre class="sm good"><code>// App.jsx — replace everything with this
+import { Routes, Route } from "react-router";
+import "./App.css";
+import ProfessionalsPage from "./pages/ProfessionalsPage";
+
+function App() {
+  return (
+    &lt;Routes&gt;
+      &lt;Route path="/" element={&lt;ProfessionalsPage /&gt;} /&gt;
+    &lt;/Routes&gt;
+  );
+}
+
+export default App;</code></pre>
+          <p class="note">One route to start with. <code class="i">element</code> takes <strong>JSX</strong>, not a component name — <code class="i">{&lt;ProfessionalsPage /&gt;}</code> with the angle brackets, not <code class="i">{ProfessionalsPage}</code>.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">The list renders, at <code class="i">/</code>, through a route</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Stop here and refresh. The app should look <em>exactly</em> as it did at the start of the session — same list, same everything. That's the point: routing added a layer, not a change.</p>
+          <p>The next two slides grow this file one line at a time. Don't let anyone paste ahead.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="The catch-all">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>The catch-all</span></div>
+        <div class="body">
+          <h2>The catch-all route</h2>
+          <pre class="sm good"><code>// App.jsx — two more lines
+import NotFoundPage from "./pages/NotFoundPage";
+
+    &lt;Routes&gt;
+      &lt;Route path="/" element={&lt;ProfessionalsPage /&gt;} /&gt;
+      &lt;Route path="*" element={&lt;NotFoundPage /&gt;} /&gt;
+    &lt;/Routes&gt;</code></pre>
+          <ul class="pts">
+            <li><code class="i">*</code> matches any URL the routes above it didn't. It goes <strong>last</strong>.</li>
+            <li>Leave it out and a mistyped address renders <strong>nothing at all</strong> — no error, no warning, a blank white page.</li>
+            <li>That blank page is one of the hardest React bugs to diagnose, because nothing is broken. Nothing matched.</li>
+          </ul>
+          <p class="note"><code class="i">NotFoundPage.jsx</code> is already written for you — there's nothing new in it. Visit <code class="i">/anything</code> to see it.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Two routes: the list, and everything else</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Demonstrate the blank page <em>before</em> adding the route — visit <code>/xyz</code> with only the one route defined. Ten seconds of nothing on screen makes the case better than the bullet does.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="Navigation">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>Navigating</span></div>
+        <div class="body">
+          <h2>Navigating with Link</h2>
+          <div class="cols">
+            <div>
+              <div class="pre-label bad">Reloads the entire app</div>
+              <pre class="xs brk"><code>&lt;a href="/login"&gt;Log in&lt;/a&gt;</code></pre>
+            </div>
+            <div>
+              <div class="pre-label good">Swaps the page in React</div>
+              <pre class="xs good"><code>&lt;Link to="/login"&gt;Log in&lt;/Link&gt;</code></pre>
+            </div>
+          </div>
+          <p class="note"><code class="i">&lt;Link&gt;</code> renders a real <code class="i">&lt;a&gt;</code> — right-click and "open in new tab" still work. It just cancels the browser's own navigation and tells the router instead.</p>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Use a plain <code class="i">&lt;a href&gt;</code> and the whole app restarts: every piece of state is lost, every request runs again, and you get a flash of white. It works, visibly badly.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Show it. Click a real <code>&lt;a&gt;</code> with the Network tab open — the whole bundle downloads again. Then swap to <code>&lt;Link&gt;</code>: nothing on the network at all.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 2" data-step="NavBar">
+        <div class="top"><span class="step">Step 2</span><span class="sep">/</span><span>NavBar</span></div>
+        <div class="body">
+          <h2>components/NavBar.jsx</h2>
+          <pre class="xs good"><code>import { Link } from "react-router";
+
+function NavBar() {
+  return (
+    &lt;nav className="nav-bar"&gt;
+      &lt;Link className="nav-brand" to="/"&gt;Professionals&lt;/Link&gt;
+
+      &lt;div className="nav-links"&gt;
+        &lt;Link className="nav-link" to="/login"&gt;Log in&lt;/Link&gt;
+        &lt;Link className="nav-link" to="/register"&gt;Register&lt;/Link&gt;
+      &lt;/div&gt;
+    &lt;/nav&gt;
+  );
+}
+
+export default NavBar;</code></pre>
+          <pre class="xs good"><code>// App.jsx — render it ABOVE &lt;Routes&gt;, so it survives every navigation
+import NavBar from "./components/NavBar";
+
+    &lt;&gt;
+      &lt;NavBar /&gt;
+      &lt;Routes&gt; ... &lt;/Routes&gt;
+    &lt;/&gt;</code></pre>
+          <p class="note">The two links point at routes that don't exist yet, so clicking them lands on the 404 page. Correct behaviour — and it proves the catch-all works.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">A nav bar that never reloads the page</span></span></div>
+        </div>
+        <div class="nt">
+          <p>The <code>&lt;&gt;...&lt;/&gt;</code> fragment is needed now that App returns two things — remind them it's "two elements, no extra div". The CSS for the bar is already in <code>App.css</code>.</p>
+          <p>Outside <code>&lt;Routes&gt;</code> is the whole reason to do this in React rather than with separate HTML files: the bar never rebuilds as you move between screens.</p>
+          <p><strong>Checkpoint.</strong> Everyone should have: list at <code>/</code>, 404 at <code>/login</code>, working back button, no full page reloads.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 03</div>
+            <h1>Context</h1>
+            <p class="lede">A value the whole app can read, without passing it down.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Around twenty minutes, led. Do not skip the prop-drilling slide — without the problem, context is magic.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Prop drilling">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Prop drilling</span></div>
+        <div class="body">
+          <h2>The prop drilling problem</h2>
+          <p class="note">Two things already need to know who's logged in: the <strong>nav bar</strong>, to show "Log out", and the <strong>login page</strong>, which is what sets it. With props alone, the token has to live in <code class="i">App</code> and be handed to both:</p>
+          <pre class="sm"><code>function App() {
+  const [token, setToken] = useState(null);   // App never uses this itself
+
+  return (
+    &lt;&gt;
+      &lt;NavBar token={token} /&gt;
+
+      &lt;Routes&gt;
+        &lt;Route path="/" element={&lt;ProfessionalsPage /&gt;} /&gt;
+        &lt;Route path="/login"
+               element={&lt;LoginPage setToken={setToken} /&gt;} /&gt;
+      &lt;/Routes&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>That's <strong>prop drilling</strong>. <code class="i">App</code> is storing something it never reads, just so it can pass it on — and <strong>every new screen that needs the token means editing <code class="i">App</code> again</strong>. In Step 6 you'll add one more thing that needs it.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Don't write this code — show it and move on. It's the "before" picture, and the next slides replace it.</p>
+          <p>Be fair to props: passing a value to your own child is normal and stays normal. Context is for the handful of values the <em>whole app</em> needs.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="What it is">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>What it is</span></div>
+        <div class="body">
+          <h2>How Context works</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Part</th><th>Job</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code class="i">createContext()</code></td><td>Makes the container. Once, at the top of the file.</td></tr>
+                <tr><td><code class="i">&lt;Context.Provider value={…}&gt;</code></td><td>Supplies the value. Everything it wraps can read it.</td></tr>
+                <tr><td><code class="i">useContext(Context)</code></td><td>Reads the value, from any depth, with no props involved.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">Context is a <strong>delivery mechanism</strong>, not a storage mechanism. The value still lives in ordinary <code class="i">useState</code> — context only changes who can reach it.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>That last line is the one to repeat. Students consistently believe context replaces state; it replaces <em>props</em>.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="localStorage">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>localStorage</span></div>
+        <div class="body">
+          <h2>localStorage</h2>
+          <p class="note">Every piece of React state is wiped on refresh. <code class="i">localStorage</code> is a small key/value store built into the browser that isn't — which is where the token has to live if a logged-in user is going to stay logged in.</p>
+          <pre class="sm"><code>localStorage.setItem("token", "eyJhbGciOi…");   // save it
+localStorage.getItem("token");                  // read it back — null if there isn't one
+localStorage.removeItem("token");               // delete it</code></pre>
+          <ul class="pts">
+            <li><strong>Strings only.</strong> Anything else has to go through <code class="i">JSON.stringify</code> on the way in and <code class="i">JSON.parse</code> on the way out. A token is already a string, so we're fine.</li>
+            <li><strong>It survives everything</strong> — refresh, closing the tab, restarting the machine — until your code deletes it or the user clears their browser data.</li>
+            <li><strong>One store per origin.</strong> What <code class="i">localhost:5173</code> saves, no other site can read.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Open DevTools &rarr; Application &rarr; Local Storage and show the empty table now. Coming back to it after the login step, with a real token sitting in it, lands better than any slide.</p>
+          <p>If someone asks whether it's secure: it is not a secret store — any script running on your page can read it. Acknowledge it and move on. It's a real topic, and not today's.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="The file">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>The file</span></div>
+        <div class="body">
+          <h2>Fill in <code class="i">context/AuthContext.jsx</code></h2>
+          <pre class="xs good"><code>import { createContext, useContext, useState } from "react";
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(() =&gt; localStorage.getItem("token"));
+
+  function login(newToken) {
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    setToken(null);
+  }
+
+  const value = { token, isLoggedIn: token !== null, login, logout };
+
+  return &lt;AuthContext.Provider value={value}&gt;{children}&lt;/AuthContext.Provider&gt;;
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}</code></pre>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The placeholder already has the imports, the <code>createContext</code> line and <code>useAuth</code>. What they add is the body of <code>AuthProvider</code> — type that out rather than pasting it. It's the densest code of the session and every line earns a sentence; the slides that follow are the sentences.</p>
+          <p><strong>If someone asks why <code>setItem</code> isn't in a <code>useEffect</code> watching <code>token</code></strong> — because it would also fire on first load with the value it just read, and write the string <code>"null"</code> on logout unless you guard it. Saving happens <em>because someone logged in</em>, and <code>login()</code> already runs at exactly that moment. Answer it only if asked; don't raise it yourself.</p>
+          <p><strong>Expect a red squiggle.</strong> ESLint says <em>"Fast refresh only works when a file only exports components"</em>, because this file exports a component and a hook. It's a hot-reload preference, not a bug — your placeholder file already carries an <code>eslint-disable</code> comment at the top with that explanation, so leave it there. Keeping the context, its provider and its hook together is the normal convention.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Details">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Details</span></div>
+        <div class="body">
+          <h2>Four details to note</h2>
+          <ul class="pts">
+            <li><code class="i">children</code> is <strong>a prop like any other</strong>. Whatever you nest inside <code class="i">&lt;AuthProvider&gt;…&lt;/AuthProvider&gt;</code> arrives as <code class="i">children</code>.</li>
+            <li><code class="i">useState(() =&gt; localStorage.getItem("token"))</code> — <strong>why the arrow?</strong> JavaScript evaluates an argument straight away, so without it localStorage is read on <em>every</em> render and the result thrown away after the first. Wrapped in a function, nothing is read until React calls it — which it does once, on the first render, and never again.</li>
+            <li><code class="i">isLoggedIn</code> is <strong>derived</strong>, not stored. Two pieces of state that must agree eventually won't.</li>
+            <li><code class="i">useAuth</code> is a <strong>custom hook</strong> — and a custom hook is nothing but a function that calls other hooks. It saves every component importing the context object separately.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The lazy initializer catches everyone. Show what happens without the arrow by adding a <code>console.log</code> inside it — a wall of logs.</p>
+          <p>"Derived, not stored" is the same rule from Workshop 6 (<code>visible</code>, <code>editing</code>). Name the callback explicitly.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Wrapping">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Wrapping</span></div>
+        <div class="body">
+          <h2>Provider order</h2>
+          <pre class="sm good"><code>import { AuthProvider } from "./context/AuthContext.jsx";
+
+&lt;StrictMode&gt;
+  &lt;BrowserRouter&gt;
+    &lt;AuthProvider&gt;
+      &lt;App /&gt;
+    &lt;/AuthProvider&gt;
+  &lt;/BrowserRouter&gt;
+&lt;/StrictMode&gt;</code></pre>
+          <p class="note"><code class="i">AuthProvider</code> goes <strong>inside</strong> <code class="i">BrowserRouter</code>, because things it renders will want to navigate. The other way round works today and breaks the moment the provider needs <code class="i">useNavigate</code>.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The general rule: a provider can use anything wrapping it, and nothing it wraps. Nesting order is a dependency order.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="Reading it">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>Reading it</span></div>
+        <div class="body">
+          <h2>Reading the context</h2>
+          <pre class="sm good"><code>import { useAuth } from "../context/AuthContext";
+
+function NavBar() {
+  const { isLoggedIn, logout } = useAuth();   // no props, any depth
+  ...
+  {isLoggedIn ? (
+    &lt;button type="button" className="btn" onClick={handleLogout}&gt;Log out&lt;/button&gt;
+  ) : (
+    &lt;&gt;
+      &lt;Link className="nav-link" to="/login"&gt;Log in&lt;/Link&gt;
+      &lt;Link className="nav-link" to="/register"&gt;Register&lt;/Link&gt;
+    &lt;/&gt;
+  )}</code></pre>
+          <p class="note">App renders NavBar and still knows nothing about tokens. That's the thing context bought.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Nav bar reacts to a token that nothing sets yet</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Prove it live: in DevTools, <code>localStorage.setItem("token", "abc")</code> then refresh. The bar flips to "Log out" with no login page in existence. That's a genuinely satisfying moment.</p>
+          <p><strong>Checkpoint.</strong></p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 3" data-step="When to use it">
+        <div class="top"><span class="step">Step 3</span><span class="sep">/</span><span>When to use it</span></div>
+        <div class="body">
+          <h2>When to use Context</h2>
+          <ul class="pts">
+            <li><strong>Use it for</strong> genuinely app-wide values: the logged-in user, a theme, a language.</li>
+            <li><strong>Don't use it for</strong> a value one component passes to its own child. That's a prop, and props are easier to follow.</li>
+            <li>Every component reading a context re-renders whenever that context's value changes. Put too much in one and you re-render the app on every keystroke.</li>
+          </ul>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Notice what we did <strong>not</strong> move into context: the professionals list. It's used by one page. It stays exactly where it is.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Say this now, because the next thing an excited student does is put all their state in a context and wonder why the app feels slow.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 04</div>
+            <h1>The login page</h1>
+            <p class="lede">Your turn. A form you already know how to build, plus two new lines.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>First solo task, around twenty minutes across the three phases. Everything in it is something they've done before except <code>login()</code> and <code>navigate()</code>.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Routes">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Routes</span></div>
+        <div class="body">
+          <h2>Adding the auth routes</h2>
+          <p class="note">Do this first, together. Both placeholder pages already have their form built, so wiring them up now means you can <strong>see the screen you're working on</strong> while you write the handler.</p>
+          <pre class="sm good"><code>// App.jsx
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+
+      &lt;Routes&gt;
+        &lt;Route path="/" element={&lt;ProfessionalsPage /&gt;} /&gt;
+        &lt;Route path="/login" element={&lt;LoginPage /&gt;} /&gt;
+        &lt;Route path="/register" element={&lt;RegisterPage /&gt;} /&gt;
+        &lt;Route path="*" element={&lt;NotFoundPage /&gt;} /&gt;
+      &lt;/Routes&gt;</code></pre>
+          <p class="note">The nav bar's two links stop hitting the 404 page. Both forms appear; neither does anything yet.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Four routes, and both forms on screen</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Thirty seconds, typed together, and it pays for itself — everyone can now click "Log in" in the nav bar and look at the form they're about to wire up. It makes the next twenty minutes concrete instead of abstract.</p>
+          <p>Keep <code>path="*"</code> last. Point out that the forms already work <em>as forms</em>: you can type in them and the button does nothing, because the placeholder's <code>handleSubmit</code> calls <code>preventDefault</code> and stops there.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="One base URL">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>One base URL</span></div>
+        <div class="body">
+          <h2>A shared API base URL</h2>
+          <pre class="sm"><code>// src/api.js — already in your project
+export const API_BASE = "http://localhost:5000/api";</code></pre>
+          <pre class="sm good"><code>// ProfessionalsPage.jsx — change these two lines
+import { API_BASE } from "../api";
+
+const API_URL = `${API_BASE}/professionals`;</code></pre>
+          <p class="note">Two hardcoded copies of a URL is a typo waiting to happen; three is a guarantee. Note the <code class="i">export</code> with no <code class="i">default</code> — that's why the import has braces around it.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Thirty seconds. It's also the first named export they've used, which is worth pointing at: <code>export default</code> means "the one thing", <code>export</code> means "one of several", and the braces on the import follow from that.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Task">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Task</span></div>
+        <div class="body">
+          <h2>Fill in <code class="i">pages/LoginPage.jsx</code></h2>
+          <ul class="pts">
+            <li><strong>Only <code class="i">handleSubmit</code> is missing.</strong> The form, its state and <code class="i">handleChange</code> are already in the placeholder.</li>
+            <li>On submit, <code class="i">POST</code> to <code class="i">http://localhost:5000/api/login</code> with <code class="i">{ email, password }</code>.</li>
+            <li>The response is <code class="i">{ message, token }</code>. Hand the token to the context, then send the user to <code class="i">/</code>.</li>
+            <li>If it fails, show the server's message instead of crashing.</li>
+          </ul>
+          <p class="note">Success looks like: log in, land on the list, and the nav bar says <strong>Log out</strong>. Refresh — still logged in.</p>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Put the endpoint on the board. Walk the room. The two things people get stuck on are which context function to call and how to redirect.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Hint">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Hint</span></div>
+        <div class="body">
+          <h2>Where to look</h2>
+          <ul class="pts">
+            <li>The form itself is <code class="i">ProfessionalForm</code> with two fields instead of four — same <code class="i">handleChange</code>, same <code class="i">e.preventDefault()</code>.</li>
+            <li>The request is Workshop 7's <code class="i">axios.post</code>, and the <code class="i">try / catch</code> around it is the same shape as <code class="i">loadProfessionals</code>.</li>
+            <li>Your context already exposes exactly the function you need. You wrote it twenty minutes ago.</li>
+            <li>To move the user after an <code class="i">await</code>, you need a hook from the router — not a <code class="i">&lt;Link&gt;</code>. Nobody is clicking anything at that point.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Give the name <code>useNavigate</code> only if someone is properly stuck — the last bullet is meant to make them go looking at the Step 2 reference slide.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Solution">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Solution</span></div>
+        <div class="body">
+          <h2>The submit handler</h2>
+          <pre class="xs good"><code>const { login } = useAuth();
+const navigate = useNavigate();
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  setError(null);
+  setSubmitting(true);
+
+  try {
+    const res = await axios.post(`${API_BASE}/login`, form);
+
+    login(res.data.token);              // remember who we are
+    navigate("/", { replace: true });   // then go somewhere
+  } catch (err) {
+    if (err.response) {
+      setError(err.response.data.message);
+    } else {
+      setError("Could not reach the server. Is the backend running?");
+    }
+  } finally {
+    setSubmitting(false);
+  }
+}</code></pre>
+          <p class="note"><code class="i">replace: true</code> swaps the history entry instead of adding one, so pressing Back from the list doesn't return them to the login form they just used.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Real login, surviving a refresh</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Point at the two lines that are new: <code>login()</code> and <code>navigate()</code>. Everything else on this slide they already knew — worth saying out loud, because it doesn't feel that way.</p>
+          <p><strong>Checkpoint.</strong> Anyone stuck checks out the branch now; Steps 5 and 6 both build on this file.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 4" data-step="Failure modes">
+        <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Failure modes</span></div>
+        <div class="body">
+          <h2>Two kinds of failure</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>What happened</th><th>What you get</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>The server answered, and said no</td><td><code class="i">err.response.status</code> is 400, <code class="i">err.response.data.message</code> is <code class="i">"Invalid password"</code></td></tr>
+                <tr><td>The request never arrived</td><td><code class="i">err.response</code> is <code class="i">undefined</code> — backend down, wrong port, no network</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p>The auth routes give a usable message. The <strong>professionals</strong> routes don't — every failure there is a 500. Same app, two qualities of error, and the difference is what the route's <code class="i">catch</code> block chooses to say.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Demonstrate both: wrong password, then stop the backend and try again. Two different messages from one <code>catch</code>.</p>
+          <p>Improving the professionals routes to answer 400 with a real message is the standing backend exercise — this is the slide that motivates it.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 05</div>
+            <h1>The register page</h1>
+            <p class="lede">Your turn again. Nearly the same page, one deliberate difference.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Around twelve minutes. This is the step to demo instead of set as a task if you're behind.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="Task">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Task</span></div>
+        <div class="body">
+          <h2>Fill in <code class="i">pages/RegisterPage.jsx</code></h2>
+          <ul class="pts">
+            <li>Open the placeholder file. Same two fields as the login page, posting to <code class="i">/api/register</code> instead.</li>
+            <li>The backend rejects passwords under 6 characters. Check that before sending.</li>
+            <li>Show the server's message when it fails — <code class="i">"User already exists"</code> is the one you'll see most.</li>
+          </ul>
+          <div class="callout">
+            <div class="bar"></div>
+            <p><strong>Read the endpoint before you write the page.</strong> Look at what <code class="i">POST /api/register</code> actually replies with, and let that decide where the user goes next.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The callout is the real exercise. Most will assume registering logs you in, write <code>login(res.data.token)</code>, and get <code>undefined</code>. Let that happen — it's the lesson.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="Hint">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Hint</span></div>
+        <div class="body">
+          <h2>The register response</h2>
+          <pre class="sm"><code>// POST /api/register  →  201
+{
+  "message": "User registered successfully",
+  "user": { "id": "6a79…", "email": "you@example.com" }
+}</code></pre>
+          <ul class="pts">
+            <li>There is <strong>no token in there</strong>. Only <code class="i">/api/login</code> issues one.</li>
+            <li>So this page cannot log anyone in. What's the next best thing to do with someone who just made an account?</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>If someone argues the API should return a token on register — they're right, plenty do. Say so. It's a design choice, and reading the API you actually have beats assuming the one you expected.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 5" data-step="Solution">
+        <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Solution</span></div>
+        <div class="body">
+          <h2>Register, then redirect</h2>
+          <pre class="xs good"><code>async function handleSubmit(e) {
+  e.preventDefault();
+
+  if (form.password.length &lt; 6) {
+    setError("Password must be at least 6 characters");
+    return;                            // never send a request you know will fail
+  }
+
+  setError(null);
+  setSubmitting(true);
+
+  try {
+    await axios.post(`${API_BASE}/register`, form);
+    navigate("/login");                // no token to keep — go log in
+  } catch (err) {
+    if (err.response) {
+      setError(err.response.data.message);
+    } else {
+      setError("Could not reach the server. Is the backend running?");
+    }
+  } finally {
+    setSubmitting(false);
+  }
+}</code></pre>
+          <p class="note">Note what's <strong>missing</strong>: this page never touches the auth context. Nobody is logged in when it finishes.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Register, then log in with the new account</span></span></div>
+        </div>
+        <div class="nt">
+          <p>The client-side length check mirrors the server's rule — same argument as Workshop 6's form validation: the server is the authority, the client is the courtesy.</p>
+          <p><strong>Checkpoint.</strong></p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 06</div>
+            <h1>Protecting<br />a route</h1>
+            <p class="lede">Last task. Keep logged-out visitors off the list.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Around fifteen minutes. Small amount of code, one important caveat that gets its own slide afterwards.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Task">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Task</span></div>
+        <div class="body">
+          <h2>Require a login for <code class="i">/</code></h2>
+          <ul class="pts">
+            <li>Visiting <code class="i">/</code> without a token should land on <code class="i">/login</code> instead.</li>
+            <li><code class="i">/login</code> and <code class="i">/register</code> must stay reachable — otherwise there's no way in.</li>
+            <li>Fill in the <code class="i">ProtectedRoute</code> placeholder — it already <strong>wraps</strong> whatever you give it, so any route can reuse it.</li>
+          </ul>
+          <p class="note">Success looks like: log out, try to visit <code class="i">/</code>, get bounced to the login form. Log in, get back in.</p>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Two clues: your context already answers the question, and React Router has a component whose entire job is to redirect when it renders.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Some will reach for <code>useEffect</code> + <code>navigate()</code>. It works, with a flicker of the protected page first. Let them discover the flicker.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Hint">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Hint</span></div>
+        <div class="body">
+          <h2>Two pieces</h2>
+          <ul class="pts">
+            <li><code class="i">&lt;Navigate to="/login" replace /&gt;</code> — a component that redirects by being rendered. No handler, no effect.</li>
+            <li>A component receives whatever it wraps as the <code class="i">children</code> prop — the same trick <code class="i">AuthProvider</code> uses.</li>
+          </ul>
+          <pre class="sm"><code>&lt;Route
+  path="/"
+  element={
+    &lt;ProtectedRoute&gt;
+      &lt;ProfessionalsPage /&gt;
+    &lt;/ProtectedRoute&gt;
+  }
+/&gt;</code></pre>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Giving the route shape away is deliberate — the nesting is fiddly to guess and isn't the part worth struggling with.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Solution">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Solution</span></div>
+        <div class="body">
+          <h2>Fill in <code class="i">components/ProtectedRoute.jsx</code></h2>
+          <pre class="sm good"><code>import { Navigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
+
+function ProtectedRoute({ children }) {
+  const { isLoggedIn } = useAuth();
+
+  if (!isLoggedIn) {
+    return &lt;Navigate to="/login" replace /&gt;;
+  }
+
+  return children;
+}
+
+export default ProtectedRoute;</code></pre>
+          <p class="note"><code class="i">replace</code> again, for a sharper reason: without it the blocked URL stays in the history, so pressing Back sends them into the redirect again. They'd be stuck.</p>
+        </div>
+        <div class="foot">
+          <div class="status ok"><span class="rail"></span><span class="txt"><span class="tag">App works now</span><span class="val">Log in, log out, protected list</span></span></div>
+        </div>
+        <div class="nt">
+          <p>Nine lines, and it reads like a sentence. Contrast it with the effect-and-navigate version someone will have written: more code, and it flashes the page it's meant to be hiding.</p>
+          <p><strong>Checkpoint.</strong> This is the finished app.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 6" data-step="Logout">
+        <div class="top"><span class="step">Step 6</span><span class="sep">/</span><span>Logout</span></div>
+        <div class="body">
+          <h2>Logging out</h2>
+          <pre class="sm good"><code>function handleLogout() {
+  logout();              // clears context AND localStorage
+  navigate("/login");    // then move them somewhere they're allowed to be
+}</code></pre>
+          <p class="note">Order matters and not for the reason people expect: clearing the token re-renders <code class="i">ProtectedRoute</code>, which would redirect anyway. The explicit <code class="i">navigate</code> is about being clear, not about being necessary.</p>
+          <div class="callout info">
+            <div class="bar"></div>
+            <p>Check localStorage in DevTools before and after. Logging out has to <strong>remove</strong> the token, not just forget it in React — otherwise a refresh logs you back in.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>The DevTools check is worth doing live. "It works until you refresh" is the classic half-done logout, and they'll write it at some point.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 7">
+        <div class="top"></div>
+        <div class="body">
+          <div class="section-card">
+            <div class="section-num">Step 07</div>
+            <h1>Recap</h1>
+            <p class="lede">What you built, and one thing it doesn't do.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Six minutes. The second slide of this step matters more than the first.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 7" data-step="The shape">
+        <div class="top"><span class="step">Step 7</span><span class="sep">/</span><span>The shape</span></div>
+        <div class="body">
+          <h2>What you built</h2>
+          <div class="loop">
+            <p class="big">URL &rarr; Route &rarr; Page &rarr; useAuth() &rarr; render or redirect</p>
+          </div>
+          <ul class="pts">
+            <li><strong>Routing</strong> decides which screen. The address bar is the state.</li>
+            <li><strong>Context</strong> decides what every screen knows. One value, no prop drilling.</li>
+            <li><strong>The API</strong> decides whether the token is real. React only stores it.</li>
+          </ul>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Ask someone to trace what happens when you type <code>/</code> into the address bar while logged out. If they can walk the arrow, the session worked.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Step 7" data-step="Not security">
+        <div class="top"><span class="step">Step 7</span><span class="sep">/</span><span>Not security</span></div>
+        <div class="body">
+          <h2>What this does not protect</h2>
+          <ul class="pts">
+            <li>The API is <strong>exactly as open as it was this morning</strong>. Nothing on the server checks the token — nothing even asks for it.</li>
+            <li>Anyone can still <code class="i">curl -X DELETE http://localhost:5000/api/professionals/&lt;id&gt;</code> and it will work.</li>
+            <li>The token in localStorage can be typed in by hand. <code class="i">localStorage.setItem("token", "anything")</code> and our guard is satisfied.</li>
+          </ul>
+          <div class="callout">
+            <div class="bar"></div>
+            <p>Route guards are a <strong>user experience</strong> feature: don't show people a page they can't use. Security happens on the server, and that's the next workshop — the JWT the backend has been signing since Workshop 5 finally gets verified.</p>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Do not soften this. A student who thinks a client-side route guard is authentication will ship that belief. Demonstrate the fake token if there's time — it takes fifteen seconds and it lands hard.</p>
+          <p>Next workshop: <code>Authorization: Bearer &lt;token&gt;</code>, auth middleware, and finally filling in the <code>creator</code> field that has been sitting unused on the Professional model.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-sec="Reference" data-step="Errors">
+        <div class="top"><span class="step">Reference</span><span class="sep">/</span><span>When it breaks</span></div>
+        <div class="body">
+          <h2>Common errors</h2>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Symptom</th><th>Cause</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code class="i">Failed to resolve import "react-router-dom"</code></td><td>Copied an old tutorial — the package is <code class="i">react-router</code></td></tr>
+                <tr><td><code class="i">use…() may be used only in the context of a &lt;Router&gt;</code></td><td>Something routing-related sits outside <code class="i">&lt;BrowserRouter&gt;</code>. The hook it names varies; the cause doesn't</td></tr>
+                <tr><td>Blank page below the nav bar</td><td>No route matched, and there's no <code class="i">path="*"</code></td></tr>
+                <tr><td>Whole app reloads on a nav click</td><td>A plain <code class="i">&lt;a href&gt;</code> instead of <code class="i">&lt;Link&gt;</code></td></tr>
+                <tr><td><code class="i">Cannot destructure property … of null</code></td><td><code class="i">useAuth()</code> called outside <code class="i">&lt;AuthProvider&gt;</code></td></tr>
+                <tr><td>Logged out again after a refresh</td><td>Token saved in state but not in localStorage</td></tr>
+                <tr><td>Still logged in after logging out</td><td><code class="i">logout()</code> didn't <code class="i">removeItem</code></td></tr>
+                <tr><td><code class="i">Cannot read properties of undefined (reading 'message')</code></td><td>Read <code class="i">err.response.data</code> without checking <code class="i">err.response</code> exists</td></tr>
+                <tr><td>Redirect loop between <code class="i">/</code> and <code class="i">/login</code></td><td>The login route was wrapped in <code class="i">ProtectedRoute</code> too</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="foot"></div>
+        <div class="nt">
+          <p>Leave this on screen during the task phases. Most hands that go up are on this table.</p>
+        </div>
+      </section>
+
+      
+
+
+    </div>
+  </div>
+
+  <div id="notes">
+    <div class="nh">Presenter notes — press N to hide</div>
+    <div class="nb" id="notesBody"></div>
+  </div>
+  <div id="bar"><i></i></div>
+  <div id="hud">
+    <button id="btnPrev" type="button" aria-label="Previous slide">&#8592;</button>
+    <button id="btnNext" type="button" aria-label="Next slide">&#8594;</button>
+    <span id="counter">1 / 1</span>
+    <button id="btnNotes" type="button">N</button>
+    <button id="btnJump" type="button">O</button>
+    <button id="btnTheme" type="button">&#9686;</button>
+    <button id="btnFull" type="button">F</button>
+  </div>
+  <div id="jump" aria-label="Slide index"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* ---------- syntax highlighting ----------
+         Runs over textContent (already-decoded source), escaping as it emits,
+         so entity handling happens exactly once. */
+      function esc(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      var RE = new RegExp([
+        "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)",                                   // 1 comment
+        "(`(?:\\\\[\\s\\S]|[^`\\\\])*`|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|'(?:\\\\[\\s\\S]|[^'\\\\])*')", // 2 string
+        "(<\\/?[A-Za-z][\\w.]*)",                                                   // 3 jsx tag
+        "\\b(const|let|var|function|return|if|else|for|of|in|while|new|async|await|try|catch|finally|throw|import|export|default|from|typeof|null|undefined|true|false)\\b", // 4 keyword
+        "\\b(\\d+(?:\\.\\d+)?)\\b",                                                 // 5 number
+        "\\b([A-Za-z_$][\\w$]*)(?=\\s*\\()"                                         // 6 call
+      ].join("|"), "g");
+
+      var CLS = { 1: "t-com", 2: "t-str", 3: "t-tag", 4: "t-kw", 5: "t-num", 6: "t-fn" };
+
+      function highlight(src) {
+        var out = "", last = 0, m;
+        RE.lastIndex = 0;
+        while ((m = RE.exec(src)) !== null) {
+          if (m[0] === "") { RE.lastIndex++; continue; }
+          out += esc(src.slice(last, m.index));
+          var cls = null;
+          for (var g = 1; g <= 6; g++) { if (m[g] !== undefined) { cls = CLS[g]; break; } }
+          out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+          last = m.index + m[0].length;
+        }
+        return out + esc(src.slice(last));
+      }
+
+      var blocks = document.querySelectorAll("pre code");
+      for (var i = 0; i < blocks.length; i++) {
+        blocks[i].innerHTML = highlight(blocks[i].textContent);
+      }
+
+      /* ---------- deck ---------- */
+      var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+      var stage = document.getElementById("stage");
+      var viewport = document.getElementById("viewport");
+      var notes = document.getElementById("notes");
+      var notesBody = document.getElementById("notesBody");
+      var jump = document.getElementById("jump");
+      var counter = document.getElementById("counter");
+      var barFill = document.querySelector("#bar > i");
+      var cur = 0;
+
+      function fit() {
+        var pad = 24;
+        var chrome = notes.classList.contains("on") ? notes.offsetHeight : 0;
+        var w = window.innerWidth - pad * 2;
+        var h = window.innerHeight - chrome - 46;
+        var s = Math.min(w / 1280, h / 720);
+        stage.style.transform = "scale(" + s + ")";
+        viewport.style.paddingBottom = (chrome + 20) + "px";
+      }
+
+      function show(n) {
+        cur = Math.max(0, Math.min(slides.length - 1, n));
+        for (var i = 0; i < slides.length; i++) {
+          slides[i].classList.toggle("on", i === cur);
+        }
+        counter.textContent = (cur + 1) + " / " + slides.length;
+        barFill.style.width = ((cur + 1) / slides.length * 100) + "%";
+        var nt = slides[cur].querySelector(".nt");
+        notesBody.innerHTML = nt ? nt.innerHTML : "<p><em>No notes for this slide.</em></p>";
+        var rows = jump.querySelectorAll(".jrow");
+        for (var j = 0; j < rows.length; j++) rows[j].classList.toggle("cur", j === cur);
+        try { location.hash = String(cur + 1); } catch (e) { }
+      }
+
+      /* jump menu, grouped by section */
+      (function buildJump() {
+        var html = "", lastSec = null, open = false;
+        slides.forEach(function (s, i) {
+          var sec = s.getAttribute("data-sec") || "—";
+          var h = s.querySelector("h1, h2, h3");
+          var label = s.getAttribute("data-step") || (h ? h.textContent.trim() : "Slide " + (i + 1));
+          if (label.length > 52) label = label.slice(0, 50) + "…";
+          if (sec !== lastSec) {
+            if (open) html += "</div>";
+            html += "<h4>" + esc(sec) + '</h4><div class="jgrid">';
+            lastSec = sec; open = true;
+          }
+          html += '<button type="button" class="jrow" data-i="' + i + '">' +
+            '<span class="jn">' + String(i + 1).padStart(2, "0") + "</span>" +
+            "<span>" + esc(label) + "</span></button>";
+        });
+        if (open) html += "</div>";
+        jump.innerHTML = html;
+        jump.addEventListener("click", function (e) {
+          var btn = e.target.closest(".jrow");
+          if (!btn) return;
+          jump.classList.remove("on");
+          show(parseInt(btn.getAttribute("data-i"), 10));
+        });
+      })();
+
+      function toggleNotes() { notes.classList.toggle("on"); fit(); }
+      function toggleJump() { jump.classList.toggle("on"); }
+      function toggleTheme() {
+        var root = document.documentElement;
+        var now = root.getAttribute("data-theme");
+        if (!now) {
+          now = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        root.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+      }
+      function toggleFull() {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var k = e.key;
+        if (jump.classList.contains("on") && k === "Escape") { jump.classList.remove("on"); return; }
+        if (k === "ArrowRight" || k === "PageDown" || k === " " || k === "j") { e.preventDefault(); show(cur + 1); }
+        else if (k === "ArrowLeft" || k === "PageUp" || k === "k") { e.preventDefault(); show(cur - 1); }
+        else if (k === "Home") { e.preventDefault(); show(0); }
+        else if (k === "End") { e.preventDefault(); show(slides.length - 1); }
+        else if (k === "n" || k === "N") { toggleNotes(); }
+        else if (k === "o" || k === "O") { toggleJump(); }
+        else if (k === "f" || k === "F") { toggleFull(); }
+        else if (k === "t" || k === "T") { toggleTheme(); }
+      });
+
+      document.getElementById("btnPrev").addEventListener("click", function () { show(cur - 1); });
+      document.getElementById("btnNext").addEventListener("click", function () { show(cur + 1); });
+      document.getElementById("btnNotes").addEventListener("click", toggleNotes);
+      document.getElementById("btnJump").addEventListener("click", toggleJump);
+      document.getElementById("btnTheme").addEventListener("click", toggleTheme);
+      document.getElementById("btnFull").addEventListener("click", toggleFull);
+
+      window.addEventListener("resize", fit);
+      document.addEventListener("fullscreenchange", fit);
+
+      var start = parseInt((location.hash || "").replace("#", ""), 10);
+      show(isNaN(start) ? 0 : start - 1);
+      fit();
+    })();
+  </script>
+</body>
+
+</html>
