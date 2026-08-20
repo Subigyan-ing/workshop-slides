@@ -1557,7 +1557,13 @@ const API_URL = `${API_BASE}/professionals`;</code></pre>
         <div class="top"><span class="step">Step 4</span><span class="sep">/</span><span>Solution</span></div>
         <div class="body">
           <h2>The submit handler</h2>
-          <pre class="xs good"><code>const { login } = useAuth();
+          <pre class="xs good"><code>import axios from "axios";
+import { Link, useNavigate } from "react-router";   // useNavigate is new
+import { API_BASE } from "../api";
+import { useAuth } from "../context/AuthContext";
+
+// the rest goes INSIDE function LoginPage(), next to the useState lines
+const { login } = useAuth();
 const navigate = useNavigate();
 
 async function handleSubmit(e) {
@@ -1677,7 +1683,14 @@ async function handleSubmit(e) {
         <div class="top"><span class="step">Step 5</span><span class="sep">/</span><span>Solution</span></div>
         <div class="body">
           <h2>Register, then redirect</h2>
-          <pre class="xs good"><code>async function handleSubmit(e) {
+          <pre class="xs good"><code>import axios from "axios";
+import { Link, useNavigate } from "react-router";   // useNavigate is new
+import { API_BASE } from "../api";
+
+// the rest goes INSIDE function RegisterPage(), next to the useState lines
+const navigate = useNavigate();
+
+async function handleSubmit(e) {
   e.preventDefault();
 
   if (form.password.length &lt; 6) {
